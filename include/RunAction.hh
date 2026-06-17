@@ -1,8 +1,6 @@
 #ifndef RUNACTION_HH
 #define RUNACTION_HH
 
-#include <fstream>
-
 #include "G4UserRunAction.hh"
 
 class G4Run;
@@ -17,9 +15,6 @@ class RunAction : public G4UserRunAction {
   void EndOfRunAction(const G4Run* run) override;
 
   void RecordDigi(const ScintillatorDigi& digi);
-
- private:
-  std::ofstream fOutput;
 };
 
 #endif

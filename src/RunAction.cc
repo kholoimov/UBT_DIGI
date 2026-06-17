@@ -2,38 +2,59 @@
 
 #include "ScintillatorDigi.hh"
 
+#include "G4AnalysisManager.hh"
 #include "G4Run.hh"
-#include "G4ios.hh"
 #include "G4SystemOfUnits.hh"
+#include "G4ios.hh"
 
-RunAction::RunAction() = default;
+RunAction::RunAction() {
+  auto* analysisManager = G4AnalysisManager::Instance();
+  analysisManager->SetDefaultFileType("root");
+  analysisManager->SetFileName("scintillator_digi");
+  analysisManager->SetVerboseLevel(1);
+  analysisManager->CreateNtuple("events", "Digitized scintillator data");
+  analysisManager->CreateNtupleIColumn("event_id");
+  analysisManager->CreateNtupleSColumn("primary_particle");
+  analysisManager->CreateNtupleDColumn("primary_energy_mev");
+  analysisManager->CreateNtupleDColumn("primary_momentum_mev_c");
+  analysisManager->CreateNtupleDColumn("muon_range_mm");
+  analysisManager->CreateNtupleDColumn("edep_mev");
+  analysisManager->CreateNtupleIColumn("scintillation_photons");
+  analysisManager->CreateNtupleDColumn("photoelectrons");
+  analysisManager->CreateNtupleIColumn("adc_counts");
+  analysisManager->CreateNtupleIColumn("triggered");
+  analysisManager->FinishNtuple();
+}
 
 RunAction::~RunAction() {
-  if (fOutput.is_open()) {
-    fOutput.close();
-  }
+  delete G4AnalysisManager::Instance();
 }
 
 void RunAction::BeginOfRunAction(const G4Run*) {
-  fOutput.open("scintillator_digi.csv", std::ios::out | std::ios::trunc);
-  fOutput << "event_id,edep_mev,scintillation_photons,photoelectrons,adc_counts,triggered\n";
+  G4AnalysisManager::Instance()->OpenFile();
 }
 
 void RunAction::EndOfRunAction(const G4Run*) {
-  if (fOutput.is_open()) {
-    fOutput.close();
-  }
-  G4cout << "Digitized event data written to scintillator_digi.csv" << G4endl;
+  auto* analysisManager = G4AnalysisManager::Instance();
+  analysisManager->Write();
+  analysisManager->CloseFile();
+  G4cout << "Digitized event data written to scintillator_digi.root" << G4endl;
 }
 
 void RunAction::RecordDigi(const ScintillatorDigi& digi) {
-  if (!fOutput.is_open()) {
-    return;
-  }
-
-  fOutput << digi.GetEventID() << ','
-          << digi.GetEnergyDeposit() / CLHEP::MeV << ','
-          << digi.GetScintillationPhotons() << ','
-          << digi.GetDetectedPhotoelectrons() << ',' << digi.GetAdcCounts()
-          << ',' << digi.GetTriggered() << '\n';
+  auto* analysisManager = G4AnalysisManager::Instance();
+  analysisManager->FillNtupleIColumn(0, digi.GetEventID());
+  analysisManager->FillNtupleSColumn(1, digi.GetPrimaryParticle());
+  analysisManager->FillNtupleDColumn(2,
+                                     digi.GetPrimaryKineticEnergy() / CLHEP::MeV);
+  analysisManager->FillNtupleDColumn(
+      3, digi.GetPrimaryMomentum() / (CLHEP::MeV / CLHEP::c_light));
+  analysisManager->FillNtupleDColumn(4,
+                                     digi.GetPrimaryMuonTrackLength() / CLHEP::mm);
+  analysisManager->FillNtupleDColumn(5, digi.GetEnergyDeposit() / CLHEP::MeV);
+  analysisManager->FillNtupleIColumn(6, digi.GetScintillationPhotons());
+  analysisManager->FillNtupleDColumn(7, digi.GetDetectedPhotoelectrons());
+  analysisManager->FillNtupleIColumn(8, digi.GetAdcCounts());
+  analysisManager->FillNtupleIColumn(9, digi.GetTriggered() ? 1 : 0);
+  analysisManager->AddNtupleRow();
 }

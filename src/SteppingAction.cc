@@ -18,6 +18,12 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
     return;
   }
 
+  const auto* track = step->GetTrack();
+  if (track != nullptr && track->GetTrackID() == 1 &&
+      track->GetDefinition()->GetParticleName() == "mu-") {
+    EventData::Instance().AddPrimaryMuonTrackLength(step->GetStepLength());
+  }
+
   const auto* secondaries = step->GetSecondaryInCurrentStep();
   if (secondaries == nullptr || secondaries->empty()) {
     return;

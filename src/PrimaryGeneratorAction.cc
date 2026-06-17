@@ -1,5 +1,7 @@
 #include "PrimaryGeneratorAction.hh"
 
+#include "EventData.hh"
+
 #include "G4ParticleDefinition.hh"
 #include "G4ParticleGun.hh"
 #include "G4ParticleTable.hh"
@@ -18,5 +20,10 @@ PrimaryGeneratorAction::PrimaryGeneratorAction() {
 PrimaryGeneratorAction::~PrimaryGeneratorAction() { delete fParticleGun; }
 
 void PrimaryGeneratorAction::GeneratePrimaries(G4Event* event) {
+  EventData::Instance().SetPrimaryParticle(
+      fParticleGun->GetParticleDefinition()->GetParticleName());
+  EventData::Instance().SetPrimaryKineticEnergy(fParticleGun->GetParticleEnergy());
+  EventData::Instance().SetPrimaryMomentum(
+      fParticleGun->GetParticleMomentum());
   fParticleGun->GeneratePrimaryVertex(event);
 }

@@ -5,6 +5,7 @@ Standalone Geant4 example for a `40 x 40 x 15 mm^3` plastic scintillator with:
 - a configurable particle gun for `mu-` or `gamma`
 - optical scintillation enabled
 - digitization based on deposited energy and the number of primary scintillation photons created inside the scintillator
+- ROOT output including primary beam info and muon range through the scintillator
 
 ## Layout
 
@@ -65,13 +66,22 @@ Current constants in `src/ScintillatorDigitizerModule.cc`:
 
 ## Output
 
-Each run writes `scintillator_digi.csv` with columns:
+Each run writes `scintillator_digi.root` with an `events` ntuple containing:
 
 ```text
-event_id,edep_mev,scintillation_photons,photoelectrons,adc_counts,triggered
+event_id
+primary_particle
+primary_energy_mev
+primary_momentum_mev_c
+muon_range_mm
+edep_mev
+scintillation_photons
+photoelectrons
+adc_counts
+triggered
 ```
 
-Each event is also printed to the console.
+The console printout contains the same event-level information.
 
 ## Changing the gun particle
 

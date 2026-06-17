@@ -37,6 +37,10 @@ void ScintillatorDigitizerModule::Digitize() {
 
   auto* currentEvent = G4EventManager::GetEventManager()->GetConstCurrentEvent();
   digi->SetEventID(currentEvent != nullptr ? currentEvent->GetEventID() : -1);
+  digi->SetPrimaryParticle(eventData.GetPrimaryParticle());
+  digi->SetPrimaryKineticEnergy(eventData.GetPrimaryKineticEnergy());
+  digi->SetPrimaryMomentum(eventData.GetPrimaryMomentum());
+  digi->SetPrimaryMuonTrackLength(eventData.GetPrimaryMuonTrackLength());
   digi->SetEnergyDeposit(edep);
   digi->SetScintillationPhotons(scintPhotons);
   digi->SetDetectedPhotoelectrons(detectedPE);
