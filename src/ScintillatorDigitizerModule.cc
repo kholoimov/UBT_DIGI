@@ -4,6 +4,8 @@
 #include "ScintillatorDigi.hh"
 
 #include "G4EventManager.hh"
+#include "G4PrimaryParticle.hh"
+#include "G4PrimaryVertex.hh"
 #include "G4SystemOfUnits.hh"
 
 #include <algorithm>
@@ -37,15 +39,28 @@ void ScintillatorDigitizerModule::Digitize() {
 
   auto* currentEvent = G4EventManager::GetEventManager()->GetConstCurrentEvent();
   digi->SetEventID(currentEvent != nullptr ? currentEvent->GetEventID() : -1);
-  digi->SetPrimaryParticle(eventData.GetPrimaryParticle());
-  digi->SetPrimaryKineticEnergy(eventData.GetPrimaryKineticEnergy());
-  digi->SetPrimaryMomentum(eventData.GetPrimaryMomentum());
   digi->SetPrimaryMuonTrackLength(eventData.GetPrimaryMuonTrackLength());
   digi->SetEnergyDeposit(edep);
   digi->SetScintillationPhotons(scintPhotons);
   digi->SetDetectedPhotoelectrons(detectedPE);
   digi->SetAdcCounts(adcCounts);
   digi->SetTriggered(triggered);
+
+  if (currentEvent != nullptr) {
+    const auto* primaryVertex = currentEvent->GetPrimaryVertex();
+    if (primaryVertex != nullptr) {
+      const auto* primary = primaryVertex->GetPrimary();
+      if (primary != nullptr) {
+        digi->SetPrimaryParticle(primary->GetParticleDefinition()->GetParticleName());
+        digi->SetPrimaryKineticEnergy(primary->GetKineticEnergy());
+
+        const double px = primary->GetPx();
+        const double py = primary->GetPy();
+        const double pz = primary->GetPz();
+        digi->SetPrimaryMomentum(std::sqrt(px * px + py * py + pz * pz));
+      }
+    }
+  }
 
   fLastDigi = std::move(digi);
 }
