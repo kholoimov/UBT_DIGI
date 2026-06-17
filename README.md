@@ -83,6 +83,16 @@ triggered
 
 The console printout contains the same event-level information.
 
+## Muon energy sampling
+
+For `mu-` runs, the primary kinetic energy is randomized independently for each event in:
+
+```text
+1 GeV <= E_mu <= 20 GeV
+```
+
+That sampled value is what gets written to `primary_energy_mev` in the ROOT ntuple and shown in the console output.
+
 ## Changing the gun particle
 
 The particle gun is configured through standard Geant4 gun commands in the macro:
@@ -92,4 +102,5 @@ The particle gun is configured through standard Geant4 gun commands in the macro
 /gun/particle gamma
 ```
 
-You can also change the energy, position, and direction in the macro files.
+For `gamma`, the macro `'/gun/energy ...'` setting is used directly.
+For `mu-`, the code overrides the macro energy and samples a random value from `1` to `20 GeV` for each event.
