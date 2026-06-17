@@ -71,7 +71,7 @@ void ScintillatorDigi::Print() {
   G4cout << "ScintillatorDigi: event=" << fEventID
          << ", primary=" << fPrimaryParticle
          << ", Ekin(MeV)=" << fPrimaryKineticEnergy / CLHEP::MeV
-         << ", p(MeV/c)=" << fPrimaryMomentum / (CLHEP::MeV / CLHEP::c_light)
+         << ", p(MeV/c)=" << fPrimaryMomentum / CLHEP::MeV
          << ", muRange(mm)=" << fPrimaryMuonTrackLength / CLHEP::mm
          << ", edep(MeV)=" << fEnergyDeposit / CLHEP::MeV
          << ", scintPhotons=" << fScintillationPhotons

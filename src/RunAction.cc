@@ -47,8 +47,7 @@ void RunAction::RecordDigi(const ScintillatorDigi& digi) {
   analysisManager->FillNtupleSColumn(1, digi.GetPrimaryParticle());
   analysisManager->FillNtupleDColumn(2,
                                      digi.GetPrimaryKineticEnergy() / CLHEP::MeV);
-  analysisManager->FillNtupleDColumn(
-      3, digi.GetPrimaryMomentum() / (CLHEP::MeV / CLHEP::c_light));
+  analysisManager->FillNtupleDColumn(3, digi.GetPrimaryMomentum() / CLHEP::MeV);
   analysisManager->FillNtupleDColumn(4,
                                      digi.GetPrimaryMuonTrackLength() / CLHEP::mm);
   analysisManager->FillNtupleDColumn(5, digi.GetEnergyDeposit() / CLHEP::MeV);

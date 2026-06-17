@@ -28,7 +28,7 @@ void EventAction::EndOfEventAction(const G4Event* event) {
     G4cout << "[Event " << event->GetEventID() << "] Primary="
            << digi->GetPrimaryParticle() << ", Ekin="
            << digi->GetPrimaryKineticEnergy() / CLHEP::MeV << " MeV, p="
-           << digi->GetPrimaryMomentum() / (CLHEP::MeV / CLHEP::c_light)
+           << digi->GetPrimaryMomentum() / CLHEP::MeV
            << " MeV/c, MuRange=" << digi->GetPrimaryMuonTrackLength() / CLHEP::mm
            << " mm, Edep="
            << digi->GetEnergyDeposit() / CLHEP::MeV << " MeV, Nscint="
