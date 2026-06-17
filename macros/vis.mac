@@ -1,0 +1,13 @@
+/control/verbose 1
+/run/verbose 1
+/event/verbose 0
+/tracking/verbose 0
+/vis/open OGL
+/vis/viewer/set/style surface
+/vis/drawVolume
+/vis/scene/add/axes 0 0 0 50 mm
+/vis/viewer/set/autoRefresh true
+/vis/scene/endOfEventAction accumulate
+/vis/scene/add/trajectories smooth
+/vis/scene/add/hits
+/run/initialize
