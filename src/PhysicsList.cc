@@ -4,6 +4,5 @@
 
 PhysicsList::PhysicsList() {
   auto* opticalPhysics = new G4OpticalPhysics();
-  opticalPhysics->SetScintillationTrackSecondariesFirst(true);
   RegisterPhysics(opticalPhysics);
 }
