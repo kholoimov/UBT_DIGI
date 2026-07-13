@@ -20,7 +20,10 @@ RunAction::RunAction() {
   analysisManager->CreateNtupleDColumn("muon_range_mm");
   analysisManager->CreateNtupleDColumn("edep_mev");
   analysisManager->CreateNtupleIColumn("scintillation_photons");
+  analysisManager->CreateNtupleIColumn("pmt_incident_photons");
   analysisManager->CreateNtupleDColumn("photoelectrons");
+  analysisManager->CreateNtupleDColumn("pmt_first_hit_ns");
+  analysisManager->CreateNtupleDColumn("pmt_charge_pc");
   analysisManager->CreateNtupleIColumn("adc_counts");
   analysisManager->CreateNtupleIColumn("triggered");
   analysisManager->FinishNtuple();
@@ -52,8 +55,14 @@ void RunAction::RecordDigi(const ScintillatorDigi& digi) {
                                      digi.GetPrimaryMuonTrackLength() / CLHEP::mm);
   analysisManager->FillNtupleDColumn(5, digi.GetEnergyDeposit() / CLHEP::MeV);
   analysisManager->FillNtupleIColumn(6, digi.GetScintillationPhotons());
-  analysisManager->FillNtupleDColumn(7, digi.GetDetectedPhotoelectrons());
-  analysisManager->FillNtupleIColumn(8, digi.GetAdcCounts());
-  analysisManager->FillNtupleIColumn(9, digi.GetTriggered() ? 1 : 0);
+  analysisManager->FillNtupleIColumn(7, digi.GetPmtIncidentPhotons());
+  analysisManager->FillNtupleDColumn(8, digi.GetDetectedPhotoelectrons());
+  analysisManager->FillNtupleDColumn(9, digi.GetFirstPmtHitTime() >= 0.0
+                                            ? digi.GetFirstPmtHitTime() / CLHEP::ns
+                                            : -1.0);
+  analysisManager->FillNtupleDColumn(10,
+                                     digi.GetPmtCharge() / CLHEP::picocoulomb);
+  analysisManager->FillNtupleIColumn(11, digi.GetAdcCounts());
+  analysisManager->FillNtupleIColumn(12, digi.GetTriggered() ? 1 : 0);
   analysisManager->AddNtupleRow();
 }

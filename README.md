@@ -4,8 +4,9 @@ Standalone Geant4 example for a `40 x 40 x 15 mm^3` plastic scintillator with:
 
 - a configurable particle gun for `mu-` or `gamma`
 - optical scintillation enabled
-- digitization based on deposited energy and the number of primary scintillation photons created inside the scintillator
-- ROOT output including primary beam info and muon range through the scintillator
+- optical photon transport from scintillator to a simplified PMT
+- PMT photoelectron and charge calculation based on photons reaching the photocathode
+- ROOT output including primary beam info, muon range, PMT timing, and PMT charge
 
 ## Layout
 
@@ -42,27 +43,40 @@ The scintillator is centered at the origin and has half-sizes:
 
 This corresponds to the requested full size of `40 x 40 x 15 mm^3`.
 
+On the `+z` face, the model includes:
+
+- `0.2 mm` optical grease
+- `1.0 mm` PMT window
+- `0.1 mm` photocathode sensitive layer
+
+Optical photons are produced in the scintillator, propagated through these media, and counted when they reach the photocathode.
+
 ## Digitization model
 
 For every event, the code accumulates:
 
 - `Edep`: total deposited energy in the scintillator
 - `Nscint`: number of optical photons produced by the `Scintillation` process in the scintillator volume
+- `Npmt`: number of optical photons that actually reach the PMT photocathode
+- `Npe`: number of photoelectrons created at the photocathode after quantum efficiency is applied
 
 Then it computes a simple digital response:
 
 ```text
-photoelectrons = Nscint * transport_efficiency * PDE
-adc_counts     = round(photoelectrons * gain_adc_per_pe)
-triggered      = (Edep >= 0.20 MeV) and (Nscint > 0)
+charge_pc  = Npe * PMT_gain * e
+adc_counts = round(charge_pc * adc_counts_per_pc)
+triggered  = (Edep >= 0.20 MeV) and (charge_pc >= 5 pC)
 ```
 
 Current constants in `src/ScintillatorDigitizerModule.cc`:
 
-- transport efficiency = `0.22`
-- photon detection efficiency = `0.35`
-- ADC gain = `8 counts / photoelectron`
+- PMT gain = `2.8e6`
+- ADC scale = `1 count / pC`
 - trigger threshold = `0.20 MeV`
+
+Current constant in `src/PMTSensitiveDetector.cc`:
+
+- photocathode quantum efficiency = `27%`
 
 ## Output
 
@@ -76,7 +90,10 @@ primary_momentum_mev_c
 muon_range_mm
 edep_mev
 scintillation_photons
+pmt_incident_photons
 photoelectrons
+pmt_first_hit_ns
+pmt_charge_pc
 adc_counts
 triggered
 ```

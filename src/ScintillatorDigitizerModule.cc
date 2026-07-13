@@ -12,10 +12,11 @@
 #include <cmath>
 
 namespace {
-constexpr double kPhotonTransportEfficiency = 0.22;
-constexpr double kPhotonDetectionEfficiency = 0.35;
-constexpr double kGainAdcPerPhotoelectron = 8.0;
+constexpr double kPmtGain = 2.8e6;
+constexpr double kElectronChargeC = 1.602176634e-19;
+constexpr double kAdcCountsPerPc = 1.0;
 constexpr double kTriggerThresholdMeV = 0.20;
+constexpr double kTriggerThresholdPc = 5.0;
 }  // namespace
 
 ScintillatorDigitizerModule::ScintillatorDigitizerModule(
@@ -30,19 +31,26 @@ void ScintillatorDigitizerModule::Digitize() {
 
   const double edep = eventData.GetEnergyDeposit();
   const int scintPhotons = eventData.GetScintillationPhotons();
-  const double detectedPE = scintPhotons * kPhotonTransportEfficiency *
-                            kPhotonDetectionEfficiency;
+  const int pmtPhotons = eventData.GetPmtIncidentPhotons();
+  const double detectedPE = static_cast<double>(eventData.GetPmtPhotoelectrons());
+  const double pmtCharge =
+      detectedPE * kPmtGain * kElectronChargeC * CLHEP::coulomb;
   const int adcCounts = static_cast<int>(
-      std::lround(std::max(0.0, detectedPE * kGainAdcPerPhotoelectron)));
+      std::lround(std::max(
+          0.0, (pmtCharge / CLHEP::picocoulomb) * kAdcCountsPerPc)));
   const bool triggered =
-      (edep >= kTriggerThresholdMeV * CLHEP::MeV) && (scintPhotons > 0);
+      (edep >= kTriggerThresholdMeV * CLHEP::MeV) &&
+      ((pmtCharge / CLHEP::picocoulomb) >= kTriggerThresholdPc);
 
   auto* currentEvent = G4EventManager::GetEventManager()->GetConstCurrentEvent();
   digi->SetEventID(currentEvent != nullptr ? currentEvent->GetEventID() : -1);
   digi->SetPrimaryMuonTrackLength(eventData.GetPrimaryMuonTrackLength());
   digi->SetEnergyDeposit(edep);
   digi->SetScintillationPhotons(scintPhotons);
+  digi->SetPmtIncidentPhotons(pmtPhotons);
   digi->SetDetectedPhotoelectrons(detectedPE);
+  digi->SetFirstPmtHitTime(eventData.GetFirstPmtHitTime());
+  digi->SetPmtCharge(pmtCharge);
   digi->SetAdcCounts(adcCounts);
   digi->SetTriggered(triggered);
 

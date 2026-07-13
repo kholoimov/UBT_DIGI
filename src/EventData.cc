@@ -12,6 +12,9 @@ void EventData::Reset() {
   fEnergyDeposit = 0.0;
   fScintillationPhotons = 0;
   fPrimaryMuonTrackLength = 0.0;
+  fPmtIncidentPhotons = 0;
+  fPmtPhotoelectrons = 0;
+  fFirstPmtHitTime = -1.0;
 }
 
 void EventData::SetPrimaryParticle(const std::string& name) {
@@ -36,6 +39,15 @@ void EventData::AddPrimaryMuonTrackLength(double length) {
   fPrimaryMuonTrackLength += length;
 }
 
+void EventData::AddPmtIncidentPhoton(double time) {
+  ++fPmtIncidentPhotons;
+  if (fFirstPmtHitTime < 0.0 || time < fFirstPmtHitTime) {
+    fFirstPmtHitTime = time;
+  }
+}
+
+void EventData::AddPmtPhotoelectron() { ++fPmtPhotoelectrons; }
+
 const std::string& EventData::GetPrimaryParticle() const {
   return fPrimaryParticle;
 }
@@ -51,3 +63,11 @@ int EventData::GetScintillationPhotons() const { return fScintillationPhotons; }
 double EventData::GetPrimaryMuonTrackLength() const {
   return fPrimaryMuonTrackLength;
 }
+
+int EventData::GetPmtIncidentPhotons() const { return fPmtIncidentPhotons; }
+
+int EventData::GetPmtPhotoelectrons() const { return fPmtPhotoelectrons; }
+
+double EventData::GetFirstPmtHitTime() const { return fFirstPmtHitTime; }
+
+bool EventData::HasPmtHit() const { return fFirstPmtHitTime >= 0.0; }

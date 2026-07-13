@@ -1,7 +1,5 @@
 #include "PrimaryGeneratorAction.hh"
 
-#include "EventData.hh"
-
 #include "Randomize.hh"
 #include "G4ParticleDefinition.hh"
 #include "G4ParticleGun.hh"

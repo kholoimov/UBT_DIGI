@@ -16,6 +16,7 @@ class DetectorConstruction : public G4VUserDetectorConstruction {
 
  private:
   G4LogicalVolume* fScintillatorLogical = nullptr;
+  G4LogicalVolume* fPhotocathodeLogical = nullptr;
 };
 
 #endif

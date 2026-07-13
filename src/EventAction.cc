@@ -32,9 +32,16 @@ void EventAction::EndOfEventAction(const G4Event* event) {
            << " MeV/c, MuRange=" << digi->GetPrimaryMuonTrackLength() / CLHEP::mm
            << " mm, Edep="
            << digi->GetEnergyDeposit() / CLHEP::MeV << " MeV, Nscint="
-           << digi->GetScintillationPhotons() << ", PE="
+           << digi->GetScintillationPhotons() << ", PMTphot="
+           << digi->GetPmtIncidentPhotons() << ", PE="
            << digi->GetDetectedPhotoelectrons() << ", ADC="
-           << digi->GetAdcCounts() << ", Trigger=" << digi->GetTriggered()
+           << digi->GetAdcCounts() << ", Q="
+           << digi->GetPmtCharge() / CLHEP::picocoulomb
+           << " pC, t0="
+           << (digi->GetFirstPmtHitTime() >= 0.0
+                   ? digi->GetFirstPmtHitTime() / CLHEP::ns
+                   : -1.0)
+           << " ns, Trigger=" << digi->GetTriggered()
            << G4endl;
   }
 }

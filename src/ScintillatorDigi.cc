@@ -27,9 +27,19 @@ void ScintillatorDigi::SetScintillationPhotons(int value) {
   fScintillationPhotons = value;
 }
 
+void ScintillatorDigi::SetPmtIncidentPhotons(int value) {
+  fPmtIncidentPhotons = value;
+}
+
 void ScintillatorDigi::SetDetectedPhotoelectrons(double value) {
   fDetectedPhotoelectrons = value;
 }
+
+void ScintillatorDigi::SetFirstPmtHitTime(double value) {
+  fFirstPmtHitTime = value;
+}
+
+void ScintillatorDigi::SetPmtCharge(double value) { fPmtCharge = value; }
 
 void ScintillatorDigi::SetAdcCounts(int value) { fAdcCounts = value; }
 
@@ -57,9 +67,17 @@ int ScintillatorDigi::GetScintillationPhotons() const {
   return fScintillationPhotons;
 }
 
+int ScintillatorDigi::GetPmtIncidentPhotons() const {
+  return fPmtIncidentPhotons;
+}
+
 double ScintillatorDigi::GetDetectedPhotoelectrons() const {
   return fDetectedPhotoelectrons;
 }
+
+double ScintillatorDigi::GetFirstPmtHitTime() const { return fFirstPmtHitTime; }
+
+double ScintillatorDigi::GetPmtCharge() const { return fPmtCharge; }
 
 int ScintillatorDigi::GetAdcCounts() const { return fAdcCounts; }
 
@@ -75,6 +93,10 @@ void ScintillatorDigi::Print() {
          << ", muRange(mm)=" << fPrimaryMuonTrackLength / CLHEP::mm
          << ", edep(MeV)=" << fEnergyDeposit / CLHEP::MeV
          << ", scintPhotons=" << fScintillationPhotons
+         << ", pmtPhotons=" << fPmtIncidentPhotons
          << ", photoelectrons=" << fDetectedPhotoelectrons
+         << ", firstHit(ns)="
+         << (fFirstPmtHitTime >= 0.0 ? fFirstPmtHitTime / CLHEP::ns : -1.0)
+         << ", charge(pC)=" << fPmtCharge / CLHEP::picocoulomb
          << ", adc=" << fAdcCounts << ", triggered=" << fTriggered << G4endl;
 }
