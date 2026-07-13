@@ -94,7 +94,7 @@ Current constants in `src/ScintillatorDigitizerModule.cc`:
 - PMT gain = `2.8e6`
 - ADC scale = `1 count / pC`
 - trigger threshold = `0.20 MeV`
-- threshold timing observable = time to `80` detected photoelectrons from the primary hit time
+- threshold timing observable = time to `5` detected photoelectrons from the primary hit time
 - threshold scan: timing sigma versus `{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40}` detected-photoelectron thresholds
 
 Current constant in `src/PMTSensitiveDetector.cc`:
@@ -123,7 +123,7 @@ pmt_charge_pc
 adc_counts
 triggered
 scintillation_production_fwhm_ns
-photoelectron_threshold_80_from_muon_ns
+photoelectron_threshold_5_from_muon_ns
 threshold_scan_pe
 threshold_scan_sigma_ns
 ```
@@ -131,7 +131,7 @@ threshold_scan_sigma_ns
 For normal event rows:
 
 - `scintillation_production_fwhm_ns` is set to `-1`
-- `photoelectron_threshold_80_from_muon_ns` stores the event-by-event delay between the primary hit time and the moment the `80`th detected photoelectron arrives, or `-1` if the event never reaches `80` photoelectrons
+- `photoelectron_threshold_5_from_muon_ns` stores the event-by-event delay between the primary hit time and the moment the `5`th detected photoelectron arrives, or `-1` if the event never reaches `5` photoelectrons
 - `threshold_scan_pe` and `threshold_scan_sigma_ns` are set to `-1`
 
 At the end of each run, the code appends one extra row to the same `events` tree with:
@@ -139,7 +139,7 @@ At the end of each run, the code appends one extra row to the same `events` tree
 - `event_id = -1`
 - `primary_particle = RUN_SUMMARY`
 - `scintillation_production_fwhm_ns` filled with the run-level FWHM of `scintillation_production_time_ns`
-- `photoelectron_threshold_80_from_muon_ns` filled with the run-average of the valid event `t80` values
+- `photoelectron_threshold_5_from_muon_ns` filled with the run-average of the valid event `t5` values
 
 The code also appends one `THRESHOLD_SCAN` row per threshold to the same `events` tree with:
 

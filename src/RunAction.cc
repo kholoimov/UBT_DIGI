@@ -24,16 +24,16 @@ constexpr std::array<int, 13> kThresholdScanPe = {1, 2, 3, 4, 5, 6, 7,
 
 G4Mutex gTimingHistogramMutex = G4MUTEX_INITIALIZER;
 std::array<int, kTimingHistogramBins> gScintillationTimingCounts = {};
-double gThreshold80TimeSumNs = 0.0;
-int gThreshold80TimeCount = 0;
+double gThreshold5TimeSumNs = 0.0;
+int gThreshold5TimeCount = 0;
 std::array<double, kThresholdScanPe.size()> gThresholdScanTimeSumNs = {};
 std::array<double, kThresholdScanPe.size()> gThresholdScanTimeSqSumNs = {};
 std::array<int, kThresholdScanPe.size()> gThresholdScanCounts = {};
 
 void ResetHistogramCounts() {
   gScintillationTimingCounts.fill(0);
-  gThreshold80TimeSumNs = 0.0;
-  gThreshold80TimeCount = 0;
+  gThreshold5TimeSumNs = 0.0;
+  gThreshold5TimeCount = 0;
   gThresholdScanTimeSumNs.fill(0.0);
   gThresholdScanTimeSqSumNs.fill(0.0);
   gThresholdScanCounts.fill(0);
@@ -166,7 +166,7 @@ RunAction::RunAction() {
   analysisManager->CreateNtupleIColumn("adc_counts");
   analysisManager->CreateNtupleIColumn("triggered");
   analysisManager->CreateNtupleDColumn("scintillation_production_fwhm_ns");
-  analysisManager->CreateNtupleDColumn("photoelectron_threshold_80_from_muon_ns");
+  analysisManager->CreateNtupleDColumn("photoelectron_threshold_5_from_muon_ns");
   analysisManager->CreateNtupleIColumn("threshold_scan_pe");
   analysisManager->CreateNtupleDColumn("threshold_scan_sigma_ns");
   analysisManager->FinishNtuple();
@@ -191,13 +191,13 @@ void RunAction::BeginOfRunAction(const G4Run*) {
 void RunAction::EndOfRunAction(const G4Run*) {
   auto* analysisManager = G4AnalysisManager::Instance();
   double scintillationFwhmNs = -1.0;
-  double meanThreshold80TimeNs = -1.0;
+  double meanThreshold5TimeNs = -1.0;
 
   if (G4Threading::IsMasterThread()) {
     G4AutoLock lock(&gTimingHistogramMutex);
     scintillationFwhmNs = ComputeFwhmNs(gScintillationTimingCounts);
-    if (gThreshold80TimeCount > 0) {
-      meanThreshold80TimeNs = gThreshold80TimeSumNs / gThreshold80TimeCount;
+    if (gThreshold5TimeCount > 0) {
+      meanThreshold5TimeNs = gThreshold5TimeSumNs / gThreshold5TimeCount;
     }
     analysisManager->FillNtupleIColumn(0, 0, -1);
     analysisManager->FillNtupleSColumn(0, 1, "RUN_SUMMARY");
@@ -213,7 +213,7 @@ void RunAction::EndOfRunAction(const G4Run*) {
     analysisManager->FillNtupleIColumn(0, 11, -1);
     analysisManager->FillNtupleIColumn(0, 12, -1);
     analysisManager->FillNtupleDColumn(0, 13, scintillationFwhmNs);
-    analysisManager->FillNtupleDColumn(0, 14, meanThreshold80TimeNs);
+    analysisManager->FillNtupleDColumn(0, 14, meanThreshold5TimeNs);
     analysisManager->FillNtupleIColumn(0, 15, -1);
     analysisManager->FillNtupleDColumn(0, 16, -1.0);
     analysisManager->AddNtupleRow(0);
@@ -248,8 +248,8 @@ void RunAction::EndOfRunAction(const G4Run*) {
   if (G4Threading::IsMasterThread()) {
     G4cout << "Run summary: FWHM(scintillation production) = "
            << scintillationFwhmNs
-           << " ns, mean t80 from muon hit = "
-           << meanThreshold80TimeNs << " ns" << G4endl;
+           << " ns, mean t5 from muon hit = "
+           << meanThreshold5TimeNs << " ns" << G4endl;
     G4cout << "Threshold scan sigma(ns):";
     for (std::size_t i = 0; i < kThresholdScanPe.size(); ++i) {
       G4cout << " " << kThresholdScanPe[i] << "pe="
@@ -303,8 +303,8 @@ void RunAction::RecordDigi(const ScintillatorDigi& digi) {
   FillHistogramCounts(EventData::Instance().GetScintillationPhotonTimes(),
                       gScintillationTimingCounts);
   if (digi.GetThreshold80TimeFromPrimary() >= 0.0) {
-    gThreshold80TimeSumNs += digi.GetThreshold80TimeFromPrimary() / CLHEP::ns;
-    ++gThreshold80TimeCount;
+    gThreshold5TimeSumNs += digi.GetThreshold80TimeFromPrimary() / CLHEP::ns;
+    ++gThreshold5TimeCount;
   }
   for (std::size_t i = 0; i < kThresholdScanPe.size(); ++i) {
     const double thresholdTimeNs = ComputeThresholdTimeNs(

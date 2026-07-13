@@ -109,7 +109,7 @@ void ScintillatorDigi::Print() {
          << ", photoelectrons=" << fDetectedPhotoelectrons
          << ", firstHit(ns)="
          << (fFirstPmtHitTime >= 0.0 ? fFirstPmtHitTime / CLHEP::ns : -1.0)
-         << ", t80(ns)="
+         << ", t5(ns)="
          << (fThreshold80TimeFromPrimary >= 0.0
                  ? fThreshold80TimeFromPrimary / CLHEP::ns
                  : -1.0)
