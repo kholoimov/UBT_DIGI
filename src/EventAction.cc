@@ -45,6 +45,10 @@ void EventAction::EndOfEventAction(const G4Event* event) {
            << (digi->GetFirstPmtHitTime() >= 0.0
                    ? digi->GetFirstPmtHitTime() / CLHEP::ns
                    : -1.0)
+           << " ns, t80="
+           << (digi->GetThreshold80TimeFromPrimary() >= 0.0
+                   ? digi->GetThreshold80TimeFromPrimary() / CLHEP::ns
+                   : -1.0)
            << " ns, Trigger=" << digi->GetTriggered()
            << G4endl;
   }

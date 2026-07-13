@@ -9,6 +9,7 @@ void EventData::Reset() {
   fPrimaryParticle.clear();
   fPrimaryKineticEnergy = 0.0;
   fPrimaryMomentum = 0.0;
+  fPrimaryHitTime = -1.0;
   fEnergyDeposit = 0.0;
   fScintillationPhotons = 0;
   fScintillationPhotonTimes.clear();
@@ -29,6 +30,12 @@ void EventData::SetPrimaryKineticEnergy(double energy) {
 
 void EventData::SetPrimaryMomentum(double momentum) {
   fPrimaryMomentum = momentum;
+}
+
+void EventData::UpdatePrimaryHitTime(double time) {
+  if (fPrimaryHitTime < 0.0 || time < fPrimaryHitTime) {
+    fPrimaryHitTime = time;
+  }
 }
 
 void EventData::AddEnergyDeposit(double edep) { fEnergyDeposit += edep; }
@@ -64,6 +71,8 @@ const std::string& EventData::GetPrimaryParticle() const {
 double EventData::GetPrimaryKineticEnergy() const { return fPrimaryKineticEnergy; }
 
 double EventData::GetPrimaryMomentum() const { return fPrimaryMomentum; }
+
+double EventData::GetPrimaryHitTime() const { return fPrimaryHitTime; }
 
 double EventData::GetEnergyDeposit() const { return fEnergyDeposit; }
 

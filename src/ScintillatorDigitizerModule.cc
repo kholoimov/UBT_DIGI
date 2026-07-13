@@ -18,6 +18,19 @@ constexpr double kPicocoulomb = 1.0e-12 * CLHEP::coulomb;
 constexpr double kAdcCountsPerPc = 1.0;
 constexpr double kTriggerThresholdMeV = 0.20;
 constexpr double kTriggerThresholdPc = 5.0;
+constexpr int kPhotoelectronThresholdCount = 80;
+
+double ComputeThresholdTimeFromPrimary(const std::vector<double>& times,
+                                       double primaryHitTime) {
+  if (primaryHitTime < 0.0 ||
+      times.size() < static_cast<std::size_t>(kPhotoelectronThresholdCount)) {
+    return -1.0;
+  }
+
+  auto sortedTimes = times;
+  std::sort(sortedTimes.begin(), sortedTimes.end());
+  return sortedTimes[kPhotoelectronThresholdCount - 1] - primaryHitTime;
+}
 }  // namespace
 
 ScintillatorDigitizerModule::ScintillatorDigitizerModule(
@@ -34,6 +47,8 @@ void ScintillatorDigitizerModule::Digitize() {
   const int scintPhotons = eventData.GetScintillationPhotons();
   const int pmtPhotons = eventData.GetPmtIncidentPhotons();
   const double detectedPE = static_cast<double>(eventData.GetPmtPhotoelectrons());
+  const double threshold80TimeFromPrimary = ComputeThresholdTimeFromPrimary(
+      eventData.GetPmtPhotoelectronTimes(), eventData.GetPrimaryHitTime());
   const double pmtCharge =
       detectedPE * kPmtGain * kElectronChargeC * CLHEP::coulomb;
   const int adcCounts = static_cast<int>(
@@ -51,6 +66,7 @@ void ScintillatorDigitizerModule::Digitize() {
   digi->SetPmtIncidentPhotons(pmtPhotons);
   digi->SetDetectedPhotoelectrons(detectedPE);
   digi->SetFirstPmtHitTime(eventData.GetFirstPmtHitTime());
+  digi->SetThreshold80TimeFromPrimary(threshold80TimeFromPrimary);
   digi->SetPmtCharge(pmtCharge);
   digi->SetAdcCounts(adcCounts);
   digi->SetTriggered(triggered);

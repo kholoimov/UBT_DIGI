@@ -20,6 +20,7 @@ class ScintillatorDigi : public G4VDigi {
   void SetPmtIncidentPhotons(int value);
   void SetDetectedPhotoelectrons(double value);
   void SetFirstPmtHitTime(double value);
+  void SetThreshold80TimeFromPrimary(double value);
   void SetPmtCharge(double value);
   void SetAdcCounts(int value);
   void SetTriggered(bool value);
@@ -34,6 +35,7 @@ class ScintillatorDigi : public G4VDigi {
   int GetPmtIncidentPhotons() const;
   double GetDetectedPhotoelectrons() const;
   double GetFirstPmtHitTime() const;
+  double GetThreshold80TimeFromPrimary() const;
   double GetPmtCharge() const;
   int GetAdcCounts() const;
   bool GetTriggered() const;
@@ -52,6 +54,7 @@ class ScintillatorDigi : public G4VDigi {
   int fPmtIncidentPhotons = 0;
   double fDetectedPhotoelectrons = 0.0;
   double fFirstPmtHitTime = -1.0;
+  double fThreshold80TimeFromPrimary = -1.0;
   double fPmtCharge = 0.0;
   int fAdcCounts = 0;
   bool fTriggered = false;

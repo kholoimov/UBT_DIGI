@@ -21,11 +21,13 @@ constexpr double kTimingHistogramMaxNs = 50.0;
 
 G4Mutex gTimingHistogramMutex = G4MUTEX_INITIALIZER;
 std::array<int, kTimingHistogramBins> gScintillationTimingCounts = {};
-std::array<int, kTimingHistogramBins> gPhotoelectronTimingCounts = {};
+double gThreshold80TimeSumNs = 0.0;
+int gThreshold80TimeCount = 0;
 
 void ResetHistogramCounts() {
   gScintillationTimingCounts.fill(0);
-  gPhotoelectronTimingCounts.fill(0);
+  gThreshold80TimeSumNs = 0.0;
+  gThreshold80TimeCount = 0;
 }
 
 void FillHistogramCounts(const std::vector<double>& times,
@@ -131,10 +133,8 @@ RunAction::RunAction() {
   analysisManager->CreateNtupleDColumn("pmt_charge_pc");
   analysisManager->CreateNtupleIColumn("adc_counts");
   analysisManager->CreateNtupleIColumn("triggered");
-  analysisManager->FinishNtuple();
-  analysisManager->CreateNtuple("run_summary", "Run-level timing summary");
   analysisManager->CreateNtupleDColumn("scintillation_production_fwhm_ns");
-  analysisManager->CreateNtupleDColumn("photoelectron_arrival_fwhm_ns");
+  analysisManager->CreateNtupleDColumn("photoelectron_threshold_80_from_muon_ns");
   analysisManager->FinishNtuple();
 }
 
@@ -157,23 +157,41 @@ void RunAction::BeginOfRunAction(const G4Run*) {
 void RunAction::EndOfRunAction(const G4Run*) {
   auto* analysisManager = G4AnalysisManager::Instance();
   double scintillationFwhmNs = -1.0;
-  double photoelectronFwhmNs = -1.0;
+  double meanThreshold80TimeNs = -1.0;
 
   if (G4Threading::IsMasterThread()) {
     G4AutoLock lock(&gTimingHistogramMutex);
     scintillationFwhmNs = ComputeFwhmNs(gScintillationTimingCounts);
-    photoelectronFwhmNs = ComputeFwhmNs(gPhotoelectronTimingCounts);
-    analysisManager->FillNtupleDColumn(1, 0, scintillationFwhmNs);
-    analysisManager->FillNtupleDColumn(1, 1, photoelectronFwhmNs);
-    analysisManager->AddNtupleRow(1);
+    if (gThreshold80TimeCount > 0) {
+      meanThreshold80TimeNs = gThreshold80TimeSumNs / gThreshold80TimeCount;
+    }
+    analysisManager->FillNtupleIColumn(0, 0, -1);
+    analysisManager->FillNtupleSColumn(0, 1, "RUN_SUMMARY");
+    analysisManager->FillNtupleDColumn(0, 2, -1.0);
+    analysisManager->FillNtupleDColumn(0, 3, -1.0);
+    analysisManager->FillNtupleDColumn(0, 4, -1.0);
+    analysisManager->FillNtupleDColumn(0, 5, -1.0);
+    analysisManager->FillNtupleIColumn(0, 6, -1);
+    analysisManager->FillNtupleIColumn(0, 7, -1);
+    analysisManager->FillNtupleDColumn(0, 8, -1.0);
+    analysisManager->FillNtupleDColumn(0, 9, -1.0);
+    analysisManager->FillNtupleDColumn(0, 10, -1.0);
+    analysisManager->FillNtupleIColumn(0, 11, -1);
+    analysisManager->FillNtupleIColumn(0, 12, -1);
+    analysisManager->FillNtupleDColumn(0, 13, scintillationFwhmNs);
+    analysisManager->FillNtupleDColumn(0, 14, meanThreshold80TimeNs);
+    analysisManager->AddNtupleRow(0);
   }
 
   analysisManager->Write();
   analysisManager->CloseFile();
   if (G4Threading::IsMasterThread()) {
+    G4cout << "Run summary: FWHM(scintillation production) = "
+           << scintillationFwhmNs
+           << " ns, mean t80 from muon hit = "
+           << meanThreshold80TimeNs << " ns" << G4endl;
     G4cout << "Digitized event data written to scintillator_digi.root"
-           << " | FWHM(scint)=" << scintillationFwhmNs
-           << " ns, FWHM(pe)=" << photoelectronFwhmNs << " ns" << G4endl;
+           << G4endl;
   }
 }
 
@@ -196,6 +214,11 @@ void RunAction::RecordDigi(const ScintillatorDigi& digi) {
   analysisManager->FillNtupleDColumn(10, digi.GetPmtCharge() / kPicocoulomb);
   analysisManager->FillNtupleIColumn(11, digi.GetAdcCounts());
   analysisManager->FillNtupleIColumn(12, digi.GetTriggered() ? 1 : 0);
+  analysisManager->FillNtupleDColumn(13, -1.0);
+  analysisManager->FillNtupleDColumn(
+      14, digi.GetThreshold80TimeFromPrimary() >= 0.0
+              ? digi.GetThreshold80TimeFromPrimary() / CLHEP::ns
+              : -1.0);
   analysisManager->AddNtupleRow();
 
   for (const double time : EventData::Instance().GetScintillationPhotonTimes()) {
@@ -209,6 +232,8 @@ void RunAction::RecordDigi(const ScintillatorDigi& digi) {
   G4AutoLock lock(&gTimingHistogramMutex);
   FillHistogramCounts(EventData::Instance().GetScintillationPhotonTimes(),
                       gScintillationTimingCounts);
-  FillHistogramCounts(EventData::Instance().GetPmtPhotoelectronTimes(),
-                      gPhotoelectronTimingCounts);
+  if (digi.GetThreshold80TimeFromPrimary() >= 0.0) {
+    gThreshold80TimeSumNs += digi.GetThreshold80TimeFromPrimary() / CLHEP::ns;
+    ++gThreshold80TimeCount;
+  }
 }

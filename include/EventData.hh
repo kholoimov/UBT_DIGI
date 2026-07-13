@@ -12,6 +12,7 @@ class EventData {
   void SetPrimaryParticle(const std::string& name);
   void SetPrimaryKineticEnergy(double energy);
   void SetPrimaryMomentum(double momentum);
+  void UpdatePrimaryHitTime(double time);
   void AddEnergyDeposit(double edep);
   void AddScintillationPhotons(int count);
   void AddScintillationPhotonTime(double time);
@@ -22,6 +23,7 @@ class EventData {
   const std::string& GetPrimaryParticle() const;
   double GetPrimaryKineticEnergy() const;
   double GetPrimaryMomentum() const;
+  double GetPrimaryHitTime() const;
   double GetEnergyDeposit() const;
   int GetScintillationPhotons() const;
   const std::vector<double>& GetScintillationPhotonTimes() const;
@@ -38,6 +40,7 @@ class EventData {
   std::string fPrimaryParticle;
   double fPrimaryKineticEnergy = 0.0;
   double fPrimaryMomentum = 0.0;
+  double fPrimaryHitTime = -1.0;
   double fEnergyDeposit = 0.0;
   int fScintillationPhotons = 0;
   std::vector<double> fScintillationPhotonTimes;

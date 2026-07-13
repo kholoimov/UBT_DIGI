@@ -43,6 +43,10 @@ void ScintillatorDigi::SetFirstPmtHitTime(double value) {
   fFirstPmtHitTime = value;
 }
 
+void ScintillatorDigi::SetThreshold80TimeFromPrimary(double value) {
+  fThreshold80TimeFromPrimary = value;
+}
+
 void ScintillatorDigi::SetPmtCharge(double value) { fPmtCharge = value; }
 
 void ScintillatorDigi::SetAdcCounts(int value) { fAdcCounts = value; }
@@ -81,6 +85,10 @@ double ScintillatorDigi::GetDetectedPhotoelectrons() const {
 
 double ScintillatorDigi::GetFirstPmtHitTime() const { return fFirstPmtHitTime; }
 
+double ScintillatorDigi::GetThreshold80TimeFromPrimary() const {
+  return fThreshold80TimeFromPrimary;
+}
+
 double ScintillatorDigi::GetPmtCharge() const { return fPmtCharge; }
 
 int ScintillatorDigi::GetAdcCounts() const { return fAdcCounts; }
@@ -101,6 +109,10 @@ void ScintillatorDigi::Print() {
          << ", photoelectrons=" << fDetectedPhotoelectrons
          << ", firstHit(ns)="
          << (fFirstPmtHitTime >= 0.0 ? fFirstPmtHitTime / CLHEP::ns : -1.0)
+         << ", t80(ns)="
+         << (fThreshold80TimeFromPrimary >= 0.0
+                 ? fThreshold80TimeFromPrimary / CLHEP::ns
+                 : -1.0)
          << ", charge(pC)=" << fPmtCharge / kPicocoulomb
          << ", adc=" << fAdcCounts << ", triggered=" << fTriggered << G4endl;
 }

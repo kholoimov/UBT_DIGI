@@ -68,7 +68,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
                    nEntries);
   mpt->AddConstProperty("SCINTILLATIONYIELD", 10000.0 / MeV);
   mpt->AddConstProperty("RESOLUTIONSCALE", 1.0);
-  mpt->AddConstProperty("SCINTILLATIONTIMECONSTANT1", 2.1 * ns);
+  // Tuned to broaden the scintillation-production timing to about 2.77 ns FWHM.
+  mpt->AddConstProperty("SCINTILLATIONTIMECONSTANT1", 3.17 * ns);
   mpt->AddConstProperty("SCINTILLATIONYIELD1", 1.0);
 
   scintillator->SetMaterialPropertiesTable(mpt);
