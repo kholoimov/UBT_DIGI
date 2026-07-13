@@ -1,6 +1,6 @@
 # UBT_DIGI
 
-Standalone Geant4 example for a `40 x 40 x 10 mm^3` plastic scintillator with:
+Standalone Geant4 example for a `40 x 40 x 10 mm^3` p-terphenyl scintillator with:
 
 - a configurable particle gun for `mu-` or `gamma`
 - optical scintillation enabled
@@ -65,6 +65,13 @@ On the `+z` face, the model includes:
 
 The sensor stack is centered on the `+z` face and has a `6 x 6 mm^2` active footprint. Optical photons are produced in the scintillator, propagated through these media, and counted when they reach the photocathode.
 
+The scintillation timing model now uses:
+
+- rise time: `0.85 ns`
+- fast decay: `2.3 ns`
+- slow tail: `4.9 ns`
+- fast/slow yield split: `85% / 15%`
+
 ## Digitization model
 
 For every event, the code accumulates:
@@ -88,6 +95,7 @@ Current constants in `src/ScintillatorDigitizerModule.cc`:
 - ADC scale = `1 count / pC`
 - trigger threshold = `0.20 MeV`
 - threshold timing observable = time to `80` detected photoelectrons from the primary hit time
+- threshold scan: timing sigma versus `{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40}` detected-photoelectron thresholds
 
 Current constant in `src/PMTSensitiveDetector.cc`:
 
@@ -116,12 +124,15 @@ adc_counts
 triggered
 scintillation_production_fwhm_ns
 photoelectron_threshold_80_from_muon_ns
+threshold_scan_pe
+threshold_scan_sigma_ns
 ```
 
 For normal event rows:
 
 - `scintillation_production_fwhm_ns` is set to `-1`
 - `photoelectron_threshold_80_from_muon_ns` stores the event-by-event delay between the primary hit time and the moment the `80`th detected photoelectron arrives, or `-1` if the event never reaches `80` photoelectrons
+- `threshold_scan_pe` and `threshold_scan_sigma_ns` are set to `-1`
 
 At the end of each run, the code appends one extra row to the same `events` tree with:
 
@@ -129,6 +140,13 @@ At the end of each run, the code appends one extra row to the same `events` tree
 - `primary_particle = RUN_SUMMARY`
 - `scintillation_production_fwhm_ns` filled with the run-level FWHM of `scintillation_production_time_ns`
 - `photoelectron_threshold_80_from_muon_ns` filled with the run-average of the valid event `t80` values
+
+The code also appends one `THRESHOLD_SCAN` row per threshold to the same `events` tree with:
+
+- `event_id = -2`
+- `primary_particle = THRESHOLD_SCAN`
+- `threshold_scan_pe` set to the detected-photoelectron threshold
+- `threshold_scan_sigma_ns` set to the run-level sigma of the threshold-crossing time
 
 The ROOT file also contains these run-level timing histograms:
 

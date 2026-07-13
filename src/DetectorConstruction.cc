@@ -20,6 +20,11 @@ constexpr G4double kScintillatorHalfY = 20.0 * mm;
 constexpr G4double kScintillatorHalfZ = 5.0 * mm;
 constexpr G4double kSipmHalfX = 3.0 * mm;
 constexpr G4double kSipmHalfY = 3.0 * mm;
+constexpr G4double kRiseTime = 0.85 * ns;
+constexpr G4double kFastDecayTime = 2.3 * ns;
+constexpr G4double kSlowDecayTime = 4.9 * ns;
+constexpr G4double kFastComponentYield = 0.85;
+constexpr G4double kSlowComponentYield = 0.15;
 }  // namespace
 
 G4VPhysicalVolume* DetectorConstruction::Construct() {
@@ -32,9 +37,9 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
   auto* hydrogen = nist->FindOrBuildElement("H");
   auto* silicon = nist->FindOrBuildElement("Si");
 
-  auto* scintillator = new G4Material("PlasticScintillator", 1.032 * g / cm3, 2);
-  scintillator->AddElement(carbon, 9);
-  scintillator->AddElement(hydrogen, 10);
+  auto* scintillator = new G4Material("PTerphenylScintillator", 1.23 * g / cm3, 2);
+  scintillator->AddElement(carbon, 18);
+  scintillator->AddElement(hydrogen, 14);
 
   auto* opticalGrease = new G4Material("OpticalGrease", 1.05 * g / cm3, 2);
   opticalGrease->AddElement(carbon, 2);
@@ -66,11 +71,16 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
   mpt->AddProperty("ABSLENGTH", photonEnergy, absorptionLength, nEntries);
   mpt->AddProperty("SCINTILLATIONCOMPONENT1", photonEnergy, emissionSpectrum,
                    nEntries);
+  mpt->AddProperty("SCINTILLATIONCOMPONENT2", photonEnergy, emissionSpectrum,
+                   nEntries);
   mpt->AddConstProperty("SCINTILLATIONYIELD", 10000.0 / MeV);
   mpt->AddConstProperty("RESOLUTIONSCALE", 1.0);
-  // Tuned to broaden the scintillation-production timing to about 2.77 ns FWHM.
-  mpt->AddConstProperty("SCINTILLATIONTIMECONSTANT1", 3.17 * ns);
-  mpt->AddConstProperty("SCINTILLATIONYIELD1", 1.0);
+  mpt->AddConstProperty("SCINTILLATIONTIMECONSTANT1", kFastDecayTime);
+  mpt->AddConstProperty("SCINTILLATIONTIMECONSTANT2", kSlowDecayTime);
+  mpt->AddConstProperty("SCINTILLATIONRISETIME1", kRiseTime);
+  mpt->AddConstProperty("SCINTILLATIONRISETIME2", kRiseTime);
+  mpt->AddConstProperty("SCINTILLATIONYIELD1", kFastComponentYield);
+  mpt->AddConstProperty("SCINTILLATIONYIELD2", kSlowComponentYield);
 
   scintillator->SetMaterialPropertiesTable(mpt);
 
