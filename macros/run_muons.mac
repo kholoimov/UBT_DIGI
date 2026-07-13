@@ -1,6 +1,6 @@
-/run/numberOfThreads 4
+/run/numberOfThreads 80
 /run/initialize
 /gun/particle mu-
 /gun/position 0 0 -30 mm
 /gun/direction 0 0 1
-/run/beamOn 20
+/run/beamOn 5000
