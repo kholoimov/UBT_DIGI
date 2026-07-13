@@ -90,7 +90,7 @@ Current constants in `src/ScintillatorDigitizerModule.cc`:
 
 Current constant in `src/PMTSensitiveDetector.cc`:
 
-- photocathode quantum efficiency = `27%`
+- sensor photon detection efficiency = `30%`
 
 ## Output
 
@@ -111,6 +111,11 @@ pmt_charge_pc
 adc_counts
 triggered
 ```
+
+The ROOT file also contains these run-level timing histograms:
+
+- `scintillation_production_time_ns`: production-time distribution of scintillation photons created inside the scintillator
+- `photoelectron_arrival_time_ns`: arrival-time distribution of detected photoelectrons at the sensor
 
 The console printout contains the same event-level information.
 

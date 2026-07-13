@@ -10,7 +10,7 @@
 #include "Randomize.hh"
 
 namespace {
-constexpr double kQuantumEfficiency = 0.27;
+constexpr double kPhotonDetectionEfficiency = 0.30;
 }
 
 PMTSensitiveDetector::PMTSensitiveDetector(const G4String& name)
@@ -30,8 +30,8 @@ G4bool PMTSensitiveDetector::ProcessHits(G4Step* step, G4TouchableHistory*) {
   }
 
   EventData::Instance().AddPmtIncidentPhoton(track->GetGlobalTime());
-  if (G4UniformRand() < kQuantumEfficiency) {
-    EventData::Instance().AddPmtPhotoelectron();
+  if (G4UniformRand() < kPhotonDetectionEfficiency) {
+    EventData::Instance().AddPmtPhotoelectron(track->GetGlobalTime());
   }
 
   track->SetTrackStatus(fStopAndKill);

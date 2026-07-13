@@ -1,5 +1,6 @@
 #include "RunAction.hh"
 
+#include "EventData.hh"
 #include "ScintillatorDigi.hh"
 
 #include "G4AnalysisManager.hh"
@@ -18,6 +19,12 @@ RunAction::RunAction() {
   analysisManager->SetFileName("scintillator_digi");
   analysisManager->SetVerboseLevel(1);
   analysisManager->SetNtupleMerging(true);
+  analysisManager->CreateH1("scintillation_production_time_ns",
+                            "Scintillation photon production time;time [ns];counts",
+                            200, 0.0, 50.0);
+  analysisManager->CreateH1("photoelectron_arrival_time_ns",
+                            "Detected photoelectron arrival time;time [ns];counts",
+                            200, 0.0, 50.0);
   analysisManager->CreateNtuple("events", "Digitized scintillator data");
   analysisManager->CreateNtupleIColumn("event_id");
   analysisManager->CreateNtupleSColumn("primary_particle");
@@ -76,4 +83,12 @@ void RunAction::RecordDigi(const ScintillatorDigi& digi) {
   analysisManager->FillNtupleIColumn(11, digi.GetAdcCounts());
   analysisManager->FillNtupleIColumn(12, digi.GetTriggered() ? 1 : 0);
   analysisManager->AddNtupleRow();
+
+  for (const double time : EventData::Instance().GetScintillationPhotonTimes()) {
+    analysisManager->FillH1(0, time / CLHEP::ns);
+  }
+
+  for (const double time : EventData::Instance().GetPmtPhotoelectronTimes()) {
+    analysisManager->FillH1(1, time / CLHEP::ns);
+  }
 }

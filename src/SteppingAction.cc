@@ -38,6 +38,8 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
     const auto* creator = secondary->GetCreatorProcess();
     if (creator != nullptr && creator->GetProcessName() == "Scintillation") {
       ++scintillationPhotons;
+      EventData::Instance().AddScintillationPhotonTime(
+          secondary->GetGlobalTime());
     }
   }
 
