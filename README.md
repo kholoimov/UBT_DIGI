@@ -33,6 +33,20 @@ cmake --build build -j
 
 If you start `./build/ubt_scintillator` without arguments, the Geant4 interactive UI is opened.
 
+## Multithreading
+
+The application now uses the Geant4 default run manager, so if your Geant4 build has multithreading enabled it can run events in parallel.
+
+The example macros set:
+
+```text
+/run/numberOfThreads 4
+```
+
+This command must appear before `/run/initialize`.
+
+Per-event accumulation is thread-local, and ROOT writing uses Geant4 analysis ntuple merging via `G4AnalysisManager::SetNtupleMerging(true)`, which is the safe way to write a single merged ROOT file from worker threads.
+
 ## Detector
 
 The scintillator is centered at the origin and has half-sizes:

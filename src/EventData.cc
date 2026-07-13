@@ -1,7 +1,7 @@
 #include "EventData.hh"
 
 EventData& EventData::Instance() {
-  static EventData instance;
+  static thread_local EventData instance;
   return instance;
 }
 

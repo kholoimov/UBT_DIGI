@@ -8,8 +8,7 @@
 #include "G4VisExecutive.hh"
 
 int main(int argc, char** argv) {
-  auto* runManager =
-      G4RunManagerFactory::CreateRunManager(G4RunManagerType::SerialOnly);
+  auto* runManager = G4RunManagerFactory::CreateRunManager();
 
   runManager->SetUserInitialization(new DetectorConstruction());
   runManager->SetUserInitialization(new PhysicsList());

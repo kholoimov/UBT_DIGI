@@ -3,6 +3,7 @@
 #include "ScintillatorDigi.hh"
 
 #include "G4AnalysisManager.hh"
+#include "G4Threading.hh"
 #include "G4Run.hh"
 #include "G4SystemOfUnits.hh"
 #include "G4ios.hh"
@@ -16,6 +17,7 @@ RunAction::RunAction() {
   analysisManager->SetDefaultFileType("root");
   analysisManager->SetFileName("scintillator_digi");
   analysisManager->SetVerboseLevel(1);
+  analysisManager->SetNtupleMerging(true);
   analysisManager->CreateNtuple("events", "Digitized scintillator data");
   analysisManager->CreateNtupleIColumn("event_id");
   analysisManager->CreateNtupleSColumn("primary_particle");
@@ -38,6 +40,9 @@ RunAction::~RunAction() {
 }
 
 void RunAction::BeginOfRunAction(const G4Run*) {
+  G4cout << "Opening ROOT output on "
+         << (G4Threading::IsMasterThread() ? "master" : "worker")
+         << " thread." << G4endl;
   G4AnalysisManager::Instance()->OpenFile();
 }
 
@@ -45,7 +50,10 @@ void RunAction::EndOfRunAction(const G4Run*) {
   auto* analysisManager = G4AnalysisManager::Instance();
   analysisManager->Write();
   analysisManager->CloseFile();
-  G4cout << "Digitized event data written to scintillator_digi.root" << G4endl;
+  if (G4Threading::IsMasterThread()) {
+    G4cout << "Digitized event data written to scintillator_digi.root"
+           << G4endl;
+  }
 }
 
 void RunAction::RecordDigi(const ScintillatorDigi& digi) {

@@ -9,6 +9,7 @@ class ActionInitialization : public G4VUserActionInitialization {
   ~ActionInitialization() override = default;
 
   void Build() const override;
+  void BuildForMaster() const override;
 };
 
 #endif
