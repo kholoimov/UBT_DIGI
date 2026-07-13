@@ -9,6 +9,7 @@
 namespace {
 constexpr double kMuonMinEnergy = 1.0 * GeV;
 constexpr double kMuonMaxEnergy = 20.0 * GeV;
+constexpr double kMuonBeamSpotHalfSize = 15.0 * mm;
 }
 
 PrimaryGeneratorAction::PrimaryGeneratorAction() {
@@ -28,7 +29,12 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* event) {
   if (particle != nullptr && particle->GetParticleName() == "mu-") {
     const double randomEnergy =
         kMuonMinEnergy + G4UniformRand() * (kMuonMaxEnergy - kMuonMinEnergy);
+    const double randomX =
+        (2.0 * G4UniformRand() - 1.0) * kMuonBeamSpotHalfSize;
+    const double randomY =
+        (2.0 * G4UniformRand() - 1.0) * kMuonBeamSpotHalfSize;
     fParticleGun->SetParticleEnergy(randomEnergy);
+    fParticleGun->SetParticlePosition({randomX, randomY, -30.0 * mm});
   }
 
   fParticleGun->GeneratePrimaryVertex(event);

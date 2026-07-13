@@ -110,6 +110,18 @@ For `mu-` runs, the primary kinetic energy is randomized independently for each 
 
 That sampled value is what gets written to `primary_energy_mev` in the ROOT ntuple and shown in the console output.
 
+## Muon beam spot
+
+For `mu-` runs, the code also randomizes the initial transverse position event-by-event on the plane:
+
+```text
+z = -30 mm
+-15 mm <= x <= 15 mm
+-15 mm <= y <= 15 mm
+```
+
+So muons do not always pass through the detector center even though the macro keeps the nominal gun plane and forward direction.
+
 ## Changing the gun particle
 
 The particle gun is configured through standard Geant4 gun commands in the macro:
