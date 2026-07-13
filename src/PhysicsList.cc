@@ -5,6 +5,6 @@
 
 PhysicsList::PhysicsList() {
   auto* opticalPhysics = new G4OpticalPhysics();
-  G4OpticalParameters::Instance()->SetFiniteRiseTime(true);
+  G4OpticalParameters::Instance()->SetScintFiniteRiseTime(true);
   RegisterPhysics(opticalPhysics);
 }
