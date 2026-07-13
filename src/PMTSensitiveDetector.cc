@@ -10,6 +10,7 @@
 #include "Randomize.hh"
 
 namespace {
+constexpr double kLightCollectionEfficiency = 0.30;
 constexpr double kPhotonDetectionEfficiency = 0.30;
 }
 
@@ -27,6 +28,11 @@ G4bool PMTSensitiveDetector::ProcessHits(G4Step* step, G4TouchableHistory*) {
   if (preStepPoint == nullptr ||
       preStepPoint->GetStepStatus() != fGeomBoundary) {
     return false;
+  }
+
+  if (G4UniformRand() >= kLightCollectionEfficiency) {
+    track->SetTrackStatus(fStopAndKill);
+    return true;
   }
 
   EventData::Instance().AddPmtIncidentPhoton(track->GetGlobalTime());

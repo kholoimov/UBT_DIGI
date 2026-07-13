@@ -71,8 +71,8 @@ For every event, the code accumulates:
 
 - `Edep`: total deposited energy in the scintillator
 - `Nscint`: number of optical photons produced by the `Scintillation` process in the scintillator volume
-- `Npmt`: number of optical photons that actually reach the PMT photocathode
-- `Npe`: number of photoelectrons created at the photocathode after quantum efficiency is applied
+- `Npmt`: number of optical photons accepted by the simplified light-collection model and passed to the sensor
+- `Npe`: number of photoelectrons created at the photocathode after photon detection efficiency is applied
 
 Then it computes a simple digital response:
 
@@ -90,7 +90,10 @@ Current constants in `src/ScintillatorDigitizerModule.cc`:
 
 Current constant in `src/PMTSensitiveDetector.cc`:
 
+- light collection efficiency = `30%`
 - sensor photon detection efficiency = `30%`
+
+This simplified sensor chain therefore gives an overall produced-photon to photoelectron efficiency of about `9%`.
 
 ## Output
 
@@ -110,6 +113,13 @@ pmt_first_hit_ns
 pmt_charge_pc
 adc_counts
 triggered
+```
+
+The same ROOT file also contains a `run_summary` ntuple with one run-level row:
+
+```text
+scintillation_production_fwhm_ns
+photoelectron_arrival_fwhm_ns
 ```
 
 The ROOT file also contains these run-level timing histograms:
