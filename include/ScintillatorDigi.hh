@@ -1,12 +1,15 @@
 #ifndef SCINTILLATORDIGI_HH
 #define SCINTILLATORDIGI_HH
 
+#include <array>
 #include <string>
 
 #include "G4VDigi.hh"
 
 class ScintillatorDigi : public G4VDigi {
  public:
+  static constexpr int kMaxStoredPhotoelectronArrivals = 200;
+
   ScintillatorDigi() = default;
   ~ScintillatorDigi() override = default;
 
@@ -21,6 +24,7 @@ class ScintillatorDigi : public G4VDigi {
   void SetDetectedPhotoelectrons(double value);
   void SetFirstPmtHitTime(double value);
   void SetThreshold80TimeFromPrimary(double value);
+  void SetPhotoelectronArrivalTime(int index, double value);
   void SetPmtCharge(double value);
   void SetAdcCounts(int value);
   void SetTriggered(bool value);
@@ -36,6 +40,7 @@ class ScintillatorDigi : public G4VDigi {
   double GetDetectedPhotoelectrons() const;
   double GetFirstPmtHitTime() const;
   double GetThreshold80TimeFromPrimary() const;
+  double GetPhotoelectronArrivalTime(int index) const;
   double GetPmtCharge() const;
   int GetAdcCounts() const;
   bool GetTriggered() const;
@@ -55,6 +60,7 @@ class ScintillatorDigi : public G4VDigi {
   double fDetectedPhotoelectrons = 0.0;
   double fFirstPmtHitTime = -1.0;
   double fThreshold80TimeFromPrimary = -1.0;
+  std::array<double, kMaxStoredPhotoelectronArrivals> fPhotoelectronArrivalTimes = {};
   double fPmtCharge = 0.0;
   int fAdcCounts = 0;
   bool fTriggered = false;

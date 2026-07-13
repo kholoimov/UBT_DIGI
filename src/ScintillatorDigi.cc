@@ -47,6 +47,14 @@ void ScintillatorDigi::SetThreshold80TimeFromPrimary(double value) {
   fThreshold80TimeFromPrimary = value;
 }
 
+void ScintillatorDigi::SetPhotoelectronArrivalTime(int index, double value) {
+  if (index < 0 || index >= kMaxStoredPhotoelectronArrivals) {
+    return;
+  }
+
+  fPhotoelectronArrivalTimes[index] = value;
+}
+
 void ScintillatorDigi::SetPmtCharge(double value) { fPmtCharge = value; }
 
 void ScintillatorDigi::SetAdcCounts(int value) { fAdcCounts = value; }
@@ -87,6 +95,14 @@ double ScintillatorDigi::GetFirstPmtHitTime() const { return fFirstPmtHitTime; }
 
 double ScintillatorDigi::GetThreshold80TimeFromPrimary() const {
   return fThreshold80TimeFromPrimary;
+}
+
+double ScintillatorDigi::GetPhotoelectronArrivalTime(int index) const {
+  if (index < 0 || index >= kMaxStoredPhotoelectronArrivals) {
+    return -1.0;
+  }
+
+  return fPhotoelectronArrivalTimes[index];
 }
 
 double ScintillatorDigi::GetPmtCharge() const { return fPmtCharge; }

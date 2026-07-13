@@ -133,6 +133,9 @@ photoelectron_threshold_5_from_muon_ns
 threshold_scan_pe
 threshold_scan_mean_ns
 threshold_scan_sigma_ns
+photoelectron_arrival_1_from_muon_ns
+...
+photoelectron_arrival_200_from_muon_ns
 ```
 
 For normal event rows:
@@ -140,6 +143,7 @@ For normal event rows:
 - `scintillation_production_fwhm_ns` is set to `-1`
 - `photoelectron_threshold_5_from_muon_ns` stores the event-by-event delay between the primary hit time and the moment the `5`th detected photoelectron arrives, or `-1` if the event never reaches `5` photoelectrons
 - `threshold_scan_pe`, `threshold_scan_mean_ns`, and `threshold_scan_sigma_ns` are set to `-1`
+- `photoelectron_arrival_1_from_muon_ns` through `photoelectron_arrival_200_from_muon_ns` store the arrival times of the `1`st through `200`th detected photoelectrons relative to the primary hit time, or `-1` when that photoelectron index is not reached in the event
 
 At the end of each run, the code appends one extra row to the same `events` tree with:
 
@@ -147,6 +151,7 @@ At the end of each run, the code appends one extra row to the same `events` tree
 - `primary_particle = RUN_SUMMARY`
 - `scintillation_production_fwhm_ns` filled with the run-level FWHM of `scintillation_production_time_ns`
 - `photoelectron_threshold_5_from_muon_ns` filled with the run-average of the valid event `t5` values
+- `photoelectron_arrival_1_from_muon_ns` through `photoelectron_arrival_200_from_muon_ns` set to `-1`
 
 The code also appends one `THRESHOLD_SCAN` row per threshold to the same `events` tree with:
 
@@ -155,6 +160,7 @@ The code also appends one `THRESHOLD_SCAN` row per threshold to the same `events
 - `threshold_scan_pe` set to the detected-photoelectron threshold
 - `threshold_scan_mean_ns` set to the run-level mean threshold-crossing time
 - `threshold_scan_sigma_ns` set to the run-level sigma of the threshold-crossing time
+- `photoelectron_arrival_1_from_muon_ns` through `photoelectron_arrival_200_from_muon_ns` set to `-1`
 
 The ROOT file also contains these run-level timing histograms:
 

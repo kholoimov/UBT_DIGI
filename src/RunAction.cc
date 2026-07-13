@@ -19,6 +19,7 @@ constexpr double kPicocoulomb = 1.0e-12 * CLHEP::coulomb;
 constexpr int kTimingHistogramBins = 200;
 constexpr double kTimingHistogramMinNs = 0.0;
 constexpr double kTimingHistogramMaxNs = 50.0;
+constexpr int kArrivalTimeColumnOffset = 18;
 constexpr std::array<int, 13> kThresholdScanPe = {1, 2, 3, 4, 5, 6, 7,
                                                   8, 9, 10, 20, 30, 40};
 
@@ -170,6 +171,10 @@ RunAction::RunAction() {
   analysisManager->CreateNtupleIColumn("threshold_scan_pe");
   analysisManager->CreateNtupleDColumn("threshold_scan_mean_ns");
   analysisManager->CreateNtupleDColumn("threshold_scan_sigma_ns");
+  for (int i = 1; i <= ScintillatorDigi::kMaxStoredPhotoelectronArrivals; ++i) {
+    analysisManager->CreateNtupleDColumn(
+        "photoelectron_arrival_" + std::to_string(i) + "_from_muon_ns");
+  }
   analysisManager->FinishNtuple();
 }
 
@@ -218,6 +223,9 @@ void RunAction::EndOfRunAction(const G4Run*) {
     analysisManager->FillNtupleIColumn(0, 15, -1);
     analysisManager->FillNtupleDColumn(0, 16, -1.0);
     analysisManager->FillNtupleDColumn(0, 17, -1.0);
+    for (int i = 0; i < ScintillatorDigi::kMaxStoredPhotoelectronArrivals; ++i) {
+      analysisManager->FillNtupleDColumn(0, kArrivalTimeColumnOffset + i, -1.0);
+    }
     analysisManager->AddNtupleRow(0);
 
     for (std::size_t i = 0; i < kThresholdScanPe.size(); ++i) {
@@ -245,6 +253,10 @@ void RunAction::EndOfRunAction(const G4Run*) {
           0, 17, ComputeSigmaNs(gThresholdScanTimeSumNs[i],
                                 gThresholdScanTimeSqSumNs[i],
                                 gThresholdScanCounts[i]));
+      for (int j = 0; j < ScintillatorDigi::kMaxStoredPhotoelectronArrivals; ++j) {
+        analysisManager->FillNtupleDColumn(
+            0, kArrivalTimeColumnOffset + j, -1.0);
+      }
       analysisManager->AddNtupleRow(0);
     }
   }
@@ -301,6 +313,13 @@ void RunAction::RecordDigi(const ScintillatorDigi& digi) {
   analysisManager->FillNtupleIColumn(15, -1);
   analysisManager->FillNtupleDColumn(16, -1.0);
   analysisManager->FillNtupleDColumn(17, -1.0);
+  for (int i = 0; i < ScintillatorDigi::kMaxStoredPhotoelectronArrivals; ++i) {
+    analysisManager->FillNtupleDColumn(
+        kArrivalTimeColumnOffset + i,
+        digi.GetPhotoelectronArrivalTime(i) >= 0.0
+            ? digi.GetPhotoelectronArrivalTime(i) / CLHEP::ns
+            : -1.0);
+  }
   analysisManager->AddNtupleRow();
 
   for (const double time : EventData::Instance().GetScintillationPhotonTimes()) {
