@@ -67,10 +67,16 @@ The sensor stack is centered on the `+z` face and has a `6 x 6 mm^2` active foot
 
 The scintillation timing model now uses:
 
-- rise time: `0.85 ns`
-- fast decay: `2.3 ns`
-- slow tail: `4.9 ns`
-- fast/slow yield split: `85% / 15%`
+- rise time: `0.20 ns`
+- fast decay: `0.60 ns`
+- slow tail: `1.80 ns`
+- fast/slow yield split: `92% / 8%`
+
+The scintillator also has a diffuse reflective wrapping model on its surfaces:
+
+- reflectivity: `96%`
+- randomized reflection angles through a `groundfrontpainted` unified optical surface
+- surface roughness parameter `sigma_alpha = 0.35`
 
 ## Digitization model
 
@@ -125,6 +131,7 @@ triggered
 scintillation_production_fwhm_ns
 photoelectron_threshold_5_from_muon_ns
 threshold_scan_pe
+threshold_scan_mean_ns
 threshold_scan_sigma_ns
 ```
 
@@ -132,7 +139,7 @@ For normal event rows:
 
 - `scintillation_production_fwhm_ns` is set to `-1`
 - `photoelectron_threshold_5_from_muon_ns` stores the event-by-event delay between the primary hit time and the moment the `5`th detected photoelectron arrives, or `-1` if the event never reaches `5` photoelectrons
-- `threshold_scan_pe` and `threshold_scan_sigma_ns` are set to `-1`
+- `threshold_scan_pe`, `threshold_scan_mean_ns`, and `threshold_scan_sigma_ns` are set to `-1`
 
 At the end of each run, the code appends one extra row to the same `events` tree with:
 
@@ -146,6 +153,7 @@ The code also appends one `THRESHOLD_SCAN` row per threshold to the same `events
 - `event_id = -2`
 - `primary_particle = THRESHOLD_SCAN`
 - `threshold_scan_pe` set to the detected-photoelectron threshold
+- `threshold_scan_mean_ns` set to the run-level mean threshold-crossing time
 - `threshold_scan_sigma_ns` set to the run-level sigma of the threshold-crossing time
 
 The ROOT file also contains these run-level timing histograms:

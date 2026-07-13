@@ -6,6 +6,7 @@
 #include "G4Box.hh"
 #include "G4LogicalBorderSurface.hh"
 #include "G4LogicalVolume.hh"
+#include "G4LogicalSkinSurface.hh"
 #include "G4Material.hh"
 #include "G4MaterialPropertiesTable.hh"
 #include "G4NistManager.hh"
@@ -20,11 +21,13 @@ constexpr G4double kScintillatorHalfY = 20.0 * mm;
 constexpr G4double kScintillatorHalfZ = 5.0 * mm;
 constexpr G4double kSipmHalfX = 3.0 * mm;
 constexpr G4double kSipmHalfY = 3.0 * mm;
-constexpr G4double kRiseTime = 0.85 * ns;
-constexpr G4double kFastDecayTime = 2.3 * ns;
-constexpr G4double kSlowDecayTime = 4.9 * ns;
-constexpr G4double kFastComponentYield = 0.85;
-constexpr G4double kSlowComponentYield = 0.15;
+constexpr G4double kRiseTime = 0.20 * ns;
+constexpr G4double kFastDecayTime = 0.60 * ns;
+constexpr G4double kSlowDecayTime = 1.80 * ns;
+constexpr G4double kFastComponentYield = 0.92;
+constexpr G4double kSlowComponentYield = 0.08;
+constexpr G4double kWrapReflectivity = 0.96;
+constexpr G4double kWrapSigmaAlpha = 0.35;
 }  // namespace
 
 G4VPhysicalVolume* DetectorConstruction::Construct() {
@@ -66,6 +69,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
                                         300.0 * cm};
   G4double photocathodeAbsorption[nEntries] = {1.0e-6 * mm, 1.0e-6 * mm,
                                                1.0e-6 * mm, 1.0e-6 * mm};
+  G4double wrapReflectivity[nEntries] = {kWrapReflectivity, kWrapReflectivity,
+                                         kWrapReflectivity, kWrapReflectivity};
 
   mpt->AddProperty("RINDEX", photonEnergy, scintRefractiveIndex, nEntries);
   mpt->AddProperty("ABSLENGTH", photonEnergy, absorptionLength, nEntries);
@@ -157,10 +162,20 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
   opticalSurface->SetModel(unified);
   opticalSurface->SetFinish(polished);
 
+  auto* wrapSurface = new G4OpticalSurface("DiffuseWrapSurface");
+  wrapSurface->SetType(dielectric_metal);
+  wrapSurface->SetModel(unified);
+  wrapSurface->SetFinish(groundfrontpainted);
+  wrapSurface->SetSigmaAlpha(kWrapSigmaAlpha);
+  auto* wrapMpt = new G4MaterialPropertiesTable();
+  wrapMpt->AddProperty("REFLECTIVITY", photonEnergy, wrapReflectivity, nEntries);
+  wrapSurface->SetMaterialPropertiesTable(wrapMpt);
+
   new G4LogicalBorderSurface("ScintillatorToGrease", scintillatorPhysical,
                              greasePhysical, opticalSurface);
   new G4LogicalBorderSurface("GreaseToWindow", greasePhysical, windowPhysical,
                              opticalSurface);
+  new G4LogicalSkinSurface("ScintillatorWrap", fScintillatorLogical, wrapSurface);
 
   return worldPhysical;
 }

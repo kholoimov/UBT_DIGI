@@ -168,6 +168,7 @@ RunAction::RunAction() {
   analysisManager->CreateNtupleDColumn("scintillation_production_fwhm_ns");
   analysisManager->CreateNtupleDColumn("photoelectron_threshold_5_from_muon_ns");
   analysisManager->CreateNtupleIColumn("threshold_scan_pe");
+  analysisManager->CreateNtupleDColumn("threshold_scan_mean_ns");
   analysisManager->CreateNtupleDColumn("threshold_scan_sigma_ns");
   analysisManager->FinishNtuple();
 }
@@ -216,6 +217,7 @@ void RunAction::EndOfRunAction(const G4Run*) {
     analysisManager->FillNtupleDColumn(0, 14, meanThreshold5TimeNs);
     analysisManager->FillNtupleIColumn(0, 15, -1);
     analysisManager->FillNtupleDColumn(0, 16, -1.0);
+    analysisManager->FillNtupleDColumn(0, 17, -1.0);
     analysisManager->AddNtupleRow(0);
 
     for (std::size_t i = 0; i < kThresholdScanPe.size(); ++i) {
@@ -236,7 +238,11 @@ void RunAction::EndOfRunAction(const G4Run*) {
       analysisManager->FillNtupleDColumn(0, 14, -1.0);
       analysisManager->FillNtupleIColumn(0, 15, kThresholdScanPe[i]);
       analysisManager->FillNtupleDColumn(
-          0, 16, ComputeSigmaNs(gThresholdScanTimeSumNs[i],
+          0, 16, gThresholdScanCounts[i] > 0
+                     ? gThresholdScanTimeSumNs[i] / gThresholdScanCounts[i]
+                     : -1.0);
+      analysisManager->FillNtupleDColumn(
+          0, 17, ComputeSigmaNs(gThresholdScanTimeSumNs[i],
                                 gThresholdScanTimeSqSumNs[i],
                                 gThresholdScanCounts[i]));
       analysisManager->AddNtupleRow(0);
@@ -252,10 +258,15 @@ void RunAction::EndOfRunAction(const G4Run*) {
            << meanThreshold5TimeNs << " ns" << G4endl;
     G4cout << "Threshold scan sigma(ns):";
     for (std::size_t i = 0; i < kThresholdScanPe.size(); ++i) {
-      G4cout << " " << kThresholdScanPe[i] << "pe="
+      const double meanNs = gThresholdScanCounts[i] > 0
+                                ? gThresholdScanTimeSumNs[i] /
+                                      gThresholdScanCounts[i]
+                                : -1.0;
+      G4cout << " " << kThresholdScanPe[i] << "pe(mean="
+             << meanNs << ", sigma="
              << ComputeSigmaNs(gThresholdScanTimeSumNs[i],
                                gThresholdScanTimeSqSumNs[i],
-                               gThresholdScanCounts[i]);
+                               gThresholdScanCounts[i]) << ")";
     }
     G4cout << G4endl;
     G4cout << "Digitized event data written to scintillator_digi.root"
@@ -289,6 +300,7 @@ void RunAction::RecordDigi(const ScintillatorDigi& digi) {
               : -1.0);
   analysisManager->FillNtupleIColumn(15, -1);
   analysisManager->FillNtupleDColumn(16, -1.0);
+  analysisManager->FillNtupleDColumn(17, -1.0);
   analysisManager->AddNtupleRow();
 
   for (const double time : EventData::Instance().GetScintillationPhotonTimes()) {
