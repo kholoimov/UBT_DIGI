@@ -10,6 +10,10 @@
 #include "G4SystemOfUnits.hh"
 #include "G4ios.hh"
 
+namespace {
+constexpr double kPicocoulomb = 1.0e-12 * CLHEP::coulomb;
+}
+
 EventAction::EventAction(RunAction* runAction) : fRunAction(runAction) {
   auto* digiManager = G4DigiManager::GetDMpointer();
   fDigitizer = new ScintillatorDigitizerModule("ScintillatorDigitizer");
@@ -36,7 +40,7 @@ void EventAction::EndOfEventAction(const G4Event* event) {
            << digi->GetPmtIncidentPhotons() << ", PE="
            << digi->GetDetectedPhotoelectrons() << ", ADC="
            << digi->GetAdcCounts() << ", Q="
-           << digi->GetPmtCharge() / CLHEP::picocoulomb
+           << digi->GetPmtCharge() / kPicocoulomb
            << " pC, t0="
            << (digi->GetFirstPmtHitTime() >= 0.0
                    ? digi->GetFirstPmtHitTime() / CLHEP::ns

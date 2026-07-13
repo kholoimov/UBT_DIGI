@@ -3,6 +3,10 @@
 #include "G4SystemOfUnits.hh"
 #include "G4ios.hh"
 
+namespace {
+constexpr double kPicocoulomb = 1.0e-12 * CLHEP::coulomb;
+}
+
 void ScintillatorDigi::SetEventID(int value) { fEventID = value; }
 
 void ScintillatorDigi::SetPrimaryParticle(const std::string& value) {
@@ -97,6 +101,6 @@ void ScintillatorDigi::Print() {
          << ", photoelectrons=" << fDetectedPhotoelectrons
          << ", firstHit(ns)="
          << (fFirstPmtHitTime >= 0.0 ? fFirstPmtHitTime / CLHEP::ns : -1.0)
-         << ", charge(pC)=" << fPmtCharge / CLHEP::picocoulomb
+         << ", charge(pC)=" << fPmtCharge / kPicocoulomb
          << ", adc=" << fAdcCounts << ", triggered=" << fTriggered << G4endl;
 }

@@ -14,6 +14,7 @@
 namespace {
 constexpr double kPmtGain = 2.8e6;
 constexpr double kElectronChargeC = 1.602176634e-19;
+constexpr double kPicocoulomb = 1.0e-12 * CLHEP::coulomb;
 constexpr double kAdcCountsPerPc = 1.0;
 constexpr double kTriggerThresholdMeV = 0.20;
 constexpr double kTriggerThresholdPc = 5.0;
@@ -37,10 +38,10 @@ void ScintillatorDigitizerModule::Digitize() {
       detectedPE * kPmtGain * kElectronChargeC * CLHEP::coulomb;
   const int adcCounts = static_cast<int>(
       std::lround(std::max(
-          0.0, (pmtCharge / CLHEP::picocoulomb) * kAdcCountsPerPc)));
+          0.0, (pmtCharge / kPicocoulomb) * kAdcCountsPerPc)));
   const bool triggered =
       (edep >= kTriggerThresholdMeV * CLHEP::MeV) &&
-      ((pmtCharge / CLHEP::picocoulomb) >= kTriggerThresholdPc);
+      ((pmtCharge / kPicocoulomb) >= kTriggerThresholdPc);
 
   auto* currentEvent = G4EventManager::GetEventManager()->GetConstCurrentEvent();
   digi->SetEventID(currentEvent != nullptr ? currentEvent->GetEventID() : -1);

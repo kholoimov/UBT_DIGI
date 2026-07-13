@@ -7,6 +7,10 @@
 #include "G4SystemOfUnits.hh"
 #include "G4ios.hh"
 
+namespace {
+constexpr double kPicocoulomb = 1.0e-12 * CLHEP::coulomb;
+}
+
 RunAction::RunAction() {
   auto* analysisManager = G4AnalysisManager::Instance();
   analysisManager->SetDefaultFileType("root");
@@ -60,8 +64,7 @@ void RunAction::RecordDigi(const ScintillatorDigi& digi) {
   analysisManager->FillNtupleDColumn(9, digi.GetFirstPmtHitTime() >= 0.0
                                             ? digi.GetFirstPmtHitTime() / CLHEP::ns
                                             : -1.0);
-  analysisManager->FillNtupleDColumn(10,
-                                     digi.GetPmtCharge() / CLHEP::picocoulomb);
+  analysisManager->FillNtupleDColumn(10, digi.GetPmtCharge() / kPicocoulomb);
   analysisManager->FillNtupleIColumn(11, digi.GetAdcCounts());
   analysisManager->FillNtupleIColumn(12, digi.GetTriggered() ? 1 : 0);
   analysisManager->AddNtupleRow();
