@@ -14,6 +14,14 @@
 #include "G4SDManager.hh"
 #include "G4SystemOfUnits.hh"
 
+namespace {
+constexpr G4double kScintillatorHalfX = 20.0 * mm;
+constexpr G4double kScintillatorHalfY = 20.0 * mm;
+constexpr G4double kScintillatorHalfZ = 5.0 * mm;
+constexpr G4double kSipmHalfX = 3.0 * mm;
+constexpr G4double kSipmHalfY = 3.0 * mm;
+}  // namespace
+
 G4VPhysicalVolume* DetectorConstruction::Construct() {
   auto* nist = G4NistManager::Instance();
 
@@ -92,8 +100,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
   auto* worldPhysical =
       new G4PVPlacement(nullptr, {}, worldLogical, "World", nullptr, false, 0);
 
-  auto* scintillatorSolid =
-      new G4Box("Scintillator", 20.0 * mm, 20.0 * mm, 7.5 * mm);
+  auto* scintillatorSolid = new G4Box(
+      "Scintillator", kScintillatorHalfX, kScintillatorHalfY, kScintillatorHalfZ);
   fScintillatorLogical = new G4LogicalVolume(scintillatorSolid, scintillator,
                                              "ScintillatorLogical");
 
@@ -105,31 +113,31 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
   constexpr double windowThickness = 1.0 * mm;
   constexpr double photocathodeThickness = 0.1 * mm;
 
-  auto* greaseSolid =
-      new G4Box("OpticalGrease", 20.0 * mm, 20.0 * mm, 0.5 * greaseThickness);
+  auto* greaseSolid = new G4Box("OpticalGrease", kSipmHalfX, kSipmHalfY,
+                                0.5 * greaseThickness);
   auto* greaseLogical =
       new G4LogicalVolume(greaseSolid, opticalGrease, "OpticalGreaseLogical");
   auto* greasePhysical = new G4PVPlacement(
-      nullptr, {0.0, 0.0, 7.5 * mm + 0.5 * greaseThickness}, greaseLogical,
+      nullptr, {0.0, 0.0, kScintillatorHalfZ + 0.5 * greaseThickness}, greaseLogical,
       "OpticalGrease", worldLogical, false, 0);
 
   auto* windowSolid =
-      new G4Box("PmtWindow", 20.0 * mm, 20.0 * mm, 0.5 * windowThickness);
+      new G4Box("PmtWindow", kSipmHalfX, kSipmHalfY, 0.5 * windowThickness);
   auto* windowLogical =
       new G4LogicalVolume(windowSolid, glassMaterial, "PmtWindowLogical");
   auto* windowPhysical = new G4PVPlacement(
       nullptr,
-      {0.0, 0.0, 7.5 * mm + greaseThickness + 0.5 * windowThickness},
+      {0.0, 0.0, kScintillatorHalfZ + greaseThickness + 0.5 * windowThickness},
       windowLogical, "PmtWindow", worldLogical, false, 0);
 
   auto* photocathodeSolid = new G4Box(
-      "Photocathode", 20.0 * mm, 20.0 * mm, 0.5 * photocathodeThickness);
+      "Photocathode", kSipmHalfX, kSipmHalfY, 0.5 * photocathodeThickness);
   fPhotocathodeLogical = new G4LogicalVolume(photocathodeSolid, photocathode,
                                              "PhotocathodeLogical");
   new G4PVPlacement(
       nullptr,
       {0.0, 0.0,
-       7.5 * mm + greaseThickness + windowThickness +
+       kScintillatorHalfZ + greaseThickness + windowThickness +
            0.5 * photocathodeThickness},
       fPhotocathodeLogical, "Photocathode", worldLogical, false, 0);
 

@@ -1,12 +1,12 @@
 # UBT_DIGI
 
-Standalone Geant4 example for a `40 x 40 x 15 mm^3` plastic scintillator with:
+Standalone Geant4 example for a `40 x 40 x 10 mm^3` plastic scintillator with:
 
 - a configurable particle gun for `mu-` or `gamma`
 - optical scintillation enabled
-- optical photon transport from scintillator to a simplified PMT
-- PMT photoelectron and charge calculation based on photons reaching the photocathode
-- ROOT output including primary beam info, muon range, PMT timing, and PMT charge
+- optical photon transport from scintillator to a centered `6 x 6 mm^2` SiPM
+- SiPM photoelectron and charge calculation based on photons reaching the photocathode
+- ROOT output including primary beam info, muon range, SiPM timing, and SiPM charge
 
 ## Layout
 
@@ -53,17 +53,17 @@ The scintillator is centered at the origin and has half-sizes:
 
 - `20 mm` in `x`
 - `20 mm` in `y`
-- `7.5 mm` in `z`
+- `5 mm` in `z`
 
-This corresponds to the requested full size of `40 x 40 x 15 mm^3`.
+This corresponds to the requested full size of `40 x 40 x 10 mm^3`.
 
 On the `+z` face, the model includes:
 
 - `0.2 mm` optical grease
-- `1.0 mm` PMT window
+- `1.0 mm` SiPM window
 - `0.1 mm` photocathode sensitive layer
 
-Optical photons are produced in the scintillator, propagated through these media, and counted when they reach the photocathode.
+The sensor stack is centered on the `+z` face and has a `6 x 6 mm^2` active footprint. Optical photons are produced in the scintillator, propagated through these media, and counted when they reach the photocathode.
 
 ## Digitization model
 
