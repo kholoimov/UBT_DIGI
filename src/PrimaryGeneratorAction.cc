@@ -14,7 +14,7 @@ constexpr double kMuonMaxEnergy = 20.0 * GeV;
 
 PrimaryGeneratorAction::PrimaryGeneratorAction() {
   fParticleGun = new G4ParticleGun(1);
-  fMuonBeamSpotHalfSize = 15.0 * mm;
+  fMuonBeamSpotHalfSize = 20.0 * mm;
   ConfigureMessenger();
 
   auto* particle = G4ParticleTable::GetParticleTable()->FindParticle("mu-");
