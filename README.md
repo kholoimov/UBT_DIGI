@@ -169,6 +169,25 @@ The ROOT file also contains these run-level timing histograms:
 
 The console printout contains the same event-level information.
 
+## Analysis
+
+The repository includes a ROOT C++ macro at [analysis/plot_event_observables.C](/Users/vkholoimov/Documents/SHIP/UBT_DIGI/analysis/plot_event_observables.C) that reads `scintillator_digi.root` and produces:
+
+- light production vs muon energy
+- photons arriving at the sensor vs produced scintillation photons
+- detected photoelectrons vs produced scintillation photons
+- timing sigma vs photoelectron threshold requirement
+- arrival-time overlay histograms for selected photoelectron indices
+- mean arrival time vs photoelectron index (`1..200`)
+
+Run it with:
+
+```bash
+root -l -q 'analysis/plot_event_observables.C("scintillator_digi.root","analysis/plots")'
+```
+
+The plots are written to `analysis/plots/` as both `.png` and `.pdf`.
+
 ## Muon energy sampling
 
 For `mu-` runs, the primary kinetic energy is randomized independently for each event in:
