@@ -121,6 +121,8 @@ primary_particle
 primary_energy_mev
 primary_momentum_mev_c
 muon_range_mm
+primary_hit_x_mm
+primary_hit_y_mm
 edep_mev
 scintillation_photons
 pmt_incident_photons
@@ -142,6 +144,7 @@ photoelectron_arrival_200_from_muon_ns
 For normal event rows:
 
 - `scintillation_production_fwhm_ns` is set to `-1`
+- `primary_hit_x_mm` and `primary_hit_y_mm` store the first position where the primary enters the scintillator
 - `photoelectron_threshold_5_from_muon_ns` stores the event-by-event delay between the primary hit time and the moment the `5`th detected photoelectron arrives, or `-1` if the event never reaches `5` photoelectrons
 - `threshold_scan_pe`, `threshold_scan_mean_ns`, and `threshold_scan_sigma_ns` are set to `-1`
 - `photoelectron_arrival_1_from_muon_ns` through `photoelectron_arrival_200_from_muon_ns` store the arrival times of the `1`st through `200`th detected photoelectrons relative to the primary hit time, or `-1` when that photoelectron index is not reached in the event
@@ -200,6 +203,7 @@ The repository includes a ROOT C++ macro at [analysis/plot_event_observables.C](
 - photons arriving at the sensor vs produced scintillation photons
 - detected photoelectrons vs produced scintillation photons
 - timing sigma vs photoelectron threshold requirement
+- muon-hit position heatmap in the scintillator
 - birth-position heatmap for photons that reach the sensor
 - arrival-time overlay histograms for selected photoelectron indices
 - mean arrival time vs photoelectron index (`1..200`)

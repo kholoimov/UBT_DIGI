@@ -96,6 +96,8 @@ void plot_event_observables(
   int eventId = -1;
   char primaryParticle[128] = {};
   double primaryEnergyMeV = 0.0;
+  double primaryHitXmm = 0.0;
+  double primaryHitYmm = 0.0;
   int scintillationPhotons = 0;
   int pmtIncidentPhotons = 0;
   double photoelectrons = 0.0;
@@ -107,6 +109,8 @@ void plot_event_observables(
   events->SetBranchAddress("event_id", &eventId);
   events->SetBranchAddress("primary_particle", primaryParticle);
   events->SetBranchAddress("primary_energy_mev", &primaryEnergyMeV);
+  events->SetBranchAddress("primary_hit_x_mm", &primaryHitXmm);
+  events->SetBranchAddress("primary_hit_y_mm", &primaryHitYmm);
   events->SetBranchAddress("scintillation_photons", &scintillationPhotons);
   events->SetBranchAddress("pmt_incident_photons", &pmtIncidentPhotons);
   events->SetBranchAddress("pmt_charge_pc", &pmtChargePC);
@@ -143,6 +147,10 @@ void plot_event_observables(
       "pmt_photon_birth_map",
       "Birth Positions of Photons Reaching Sensor;birth x [mm];birth y [mm]",
       41, -20.5, 20.5, 41, -20.5, 20.5);
+  auto muonHitMap = std::make_unique<TH2D>(
+      "muon_hit_map",
+      "Muon Hit Positions in Scintillator;hit x [mm];hit y [mm]",
+      41, -20.5, 20.5, 41, -20.5, 20.5);
 
   auto pmt_charge_pc_histogram = std::make_unique<TH1D>(
     "pmt_charge_pc_histogram",
@@ -178,6 +186,7 @@ void plot_event_observables(
 
       peVsPhotons->Fill(scintillationPhotons, photoelectrons);
       peVsPhotonsProfile->Fill(scintillationPhotons, photoelectrons);
+      muonHitMap->Fill(primaryHitXmm, primaryHitYmm);
 
       pmt_charge_pc_histogram->Fill(pmtChargePC);
 
@@ -449,6 +458,13 @@ void plot_event_observables(
     std::cerr << "No 'pmt_photon_births' tree found; birth-position map was not "
                  "produced."
               << std::endl;
+  }
+
+  {
+    TCanvas canvas("c_muon_hit_map", "Muon Hit Positions in Scintillator", 900,
+                   800);
+    muonHitMap->Draw("COLZ");
+    SaveCanvas(canvas, outputDir, "muon_hit_map");
   }
 
   {

@@ -10,6 +10,10 @@ void EventData::Reset() {
   fPrimaryKineticEnergy = 0.0;
   fPrimaryMomentum = 0.0;
   fPrimaryHitTime = -1.0;
+  fPrimaryHitX = 0.0;
+  fPrimaryHitY = 0.0;
+  fPrimaryHitZ = 0.0;
+  fHasPrimaryHitPosition = false;
   fEnergyDeposit = 0.0;
   fScintillationPhotons = 0;
   fScintillationPhotonTimes.clear();
@@ -36,6 +40,15 @@ void EventData::SetPrimaryMomentum(double momentum) {
 void EventData::UpdatePrimaryHitTime(double time) {
   if (fPrimaryHitTime < 0.0 || time < fPrimaryHitTime) {
     fPrimaryHitTime = time;
+  }
+}
+
+void EventData::UpdatePrimaryHitPosition(double x, double y, double z) {
+  if (!fHasPrimaryHitPosition) {
+    fPrimaryHitX = x;
+    fPrimaryHitY = y;
+    fPrimaryHitZ = z;
+    fHasPrimaryHitPosition = true;
   }
 }
 
@@ -76,6 +89,12 @@ double EventData::GetPrimaryKineticEnergy() const { return fPrimaryKineticEnergy
 double EventData::GetPrimaryMomentum() const { return fPrimaryMomentum; }
 
 double EventData::GetPrimaryHitTime() const { return fPrimaryHitTime; }
+
+double EventData::GetPrimaryHitX() const { return fPrimaryHitX; }
+
+double EventData::GetPrimaryHitY() const { return fPrimaryHitY; }
+
+double EventData::GetPrimaryHitZ() const { return fPrimaryHitZ; }
 
 double EventData::GetEnergyDeposit() const { return fEnergyDeposit; }
 

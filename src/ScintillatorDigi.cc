@@ -25,6 +25,12 @@ void ScintillatorDigi::SetPrimaryMuonTrackLength(double value) {
   fPrimaryMuonTrackLength = value;
 }
 
+void ScintillatorDigi::SetPrimaryHitPosition(double x, double y, double z) {
+  fPrimaryHitX = x;
+  fPrimaryHitY = y;
+  fPrimaryHitZ = z;
+}
+
 void ScintillatorDigi::SetEnergyDeposit(double value) { fEnergyDeposit = value; }
 
 void ScintillatorDigi::SetScintillationPhotons(int value) {
@@ -77,6 +83,12 @@ double ScintillatorDigi::GetPrimaryMuonTrackLength() const {
   return fPrimaryMuonTrackLength;
 }
 
+double ScintillatorDigi::GetPrimaryHitX() const { return fPrimaryHitX; }
+
+double ScintillatorDigi::GetPrimaryHitY() const { return fPrimaryHitY; }
+
+double ScintillatorDigi::GetPrimaryHitZ() const { return fPrimaryHitZ; }
+
 double ScintillatorDigi::GetEnergyDeposit() const { return fEnergyDeposit; }
 
 int ScintillatorDigi::GetScintillationPhotons() const {
@@ -119,6 +131,8 @@ void ScintillatorDigi::Print() {
          << ", Ekin(MeV)=" << fPrimaryKineticEnergy / CLHEP::MeV
          << ", p(MeV/c)=" << fPrimaryMomentum / CLHEP::MeV
          << ", muRange(mm)=" << fPrimaryMuonTrackLength / CLHEP::mm
+         << ", hitXY(mm)=(" << fPrimaryHitX / CLHEP::mm << ", "
+         << fPrimaryHitY / CLHEP::mm << ")"
          << ", edep(MeV)=" << fEnergyDeposit / CLHEP::MeV
          << ", scintPhotons=" << fScintillationPhotons
          << ", pmtPhotons=" << fPmtIncidentPhotons

@@ -19,7 +19,7 @@ constexpr double kPicocoulomb = 1.0e-12 * CLHEP::coulomb;
 constexpr int kTimingHistogramBins = 200;
 constexpr double kTimingHistogramMinNs = 0.0;
 constexpr double kTimingHistogramMaxNs = 50.0;
-constexpr int kArrivalTimeColumnOffset = 18;
+constexpr int kArrivalTimeColumnOffset = 20;
 constexpr std::array<int, 13> kThresholdScanPe = {1, 2, 3, 4, 5, 6, 7,
                                                   8, 9, 10, 20, 30, 40};
 
@@ -158,6 +158,8 @@ RunAction::RunAction() {
   analysisManager->CreateNtupleDColumn("primary_energy_mev");
   analysisManager->CreateNtupleDColumn("primary_momentum_mev_c");
   analysisManager->CreateNtupleDColumn("muon_range_mm");
+  analysisManager->CreateNtupleDColumn("primary_hit_x_mm");
+  analysisManager->CreateNtupleDColumn("primary_hit_y_mm");
   analysisManager->CreateNtupleDColumn("edep_mev");
   analysisManager->CreateNtupleIColumn("scintillation_photons");
   analysisManager->CreateNtupleIColumn("pmt_incident_photons");
@@ -218,18 +220,20 @@ void RunAction::EndOfRunAction(const G4Run*) {
     analysisManager->FillNtupleDColumn(0, 3, -1.0);
     analysisManager->FillNtupleDColumn(0, 4, -1.0);
     analysisManager->FillNtupleDColumn(0, 5, -1.0);
-    analysisManager->FillNtupleIColumn(0, 6, -1);
-    analysisManager->FillNtupleIColumn(0, 7, -1);
-    analysisManager->FillNtupleDColumn(0, 8, -1.0);
-    analysisManager->FillNtupleDColumn(0, 9, -1.0);
+    analysisManager->FillNtupleDColumn(0, 6, -1.0);
+    analysisManager->FillNtupleDColumn(0, 7, -1.0);
+    analysisManager->FillNtupleIColumn(0, 8, -1);
+    analysisManager->FillNtupleIColumn(0, 9, -1);
     analysisManager->FillNtupleDColumn(0, 10, -1.0);
-    analysisManager->FillNtupleIColumn(0, 11, -1);
-    analysisManager->FillNtupleIColumn(0, 12, -1);
-    analysisManager->FillNtupleDColumn(0, 13, scintillationFwhmNs);
-    analysisManager->FillNtupleDColumn(0, 14, meanThreshold5TimeNs);
-    analysisManager->FillNtupleIColumn(0, 15, -1);
-    analysisManager->FillNtupleDColumn(0, 16, -1.0);
-    analysisManager->FillNtupleDColumn(0, 17, -1.0);
+    analysisManager->FillNtupleDColumn(0, 11, -1.0);
+    analysisManager->FillNtupleDColumn(0, 12, -1.0);
+    analysisManager->FillNtupleIColumn(0, 13, -1);
+    analysisManager->FillNtupleIColumn(0, 14, -1);
+    analysisManager->FillNtupleDColumn(0, 15, scintillationFwhmNs);
+    analysisManager->FillNtupleDColumn(0, 16, meanThreshold5TimeNs);
+    analysisManager->FillNtupleIColumn(0, 17, -1);
+    analysisManager->FillNtupleDColumn(0, 18, -1.0);
+    analysisManager->FillNtupleDColumn(0, 19, -1.0);
     for (int i = 0; i < ScintillatorDigi::kMaxStoredPhotoelectronArrivals; ++i) {
       analysisManager->FillNtupleDColumn(0, kArrivalTimeColumnOffset + i, -1.0);
     }
@@ -242,22 +246,24 @@ void RunAction::EndOfRunAction(const G4Run*) {
       analysisManager->FillNtupleDColumn(0, 3, -1.0);
       analysisManager->FillNtupleDColumn(0, 4, -1.0);
       analysisManager->FillNtupleDColumn(0, 5, -1.0);
-      analysisManager->FillNtupleIColumn(0, 6, -1);
-      analysisManager->FillNtupleIColumn(0, 7, -1);
-      analysisManager->FillNtupleDColumn(0, 8, -1.0);
-      analysisManager->FillNtupleDColumn(0, 9, -1.0);
+      analysisManager->FillNtupleDColumn(0, 6, -1.0);
+      analysisManager->FillNtupleDColumn(0, 7, -1.0);
+      analysisManager->FillNtupleIColumn(0, 8, -1);
+      analysisManager->FillNtupleIColumn(0, 9, -1);
       analysisManager->FillNtupleDColumn(0, 10, -1.0);
-      analysisManager->FillNtupleIColumn(0, 11, -1);
-      analysisManager->FillNtupleIColumn(0, 12, -1);
-      analysisManager->FillNtupleDColumn(0, 13, -1.0);
-      analysisManager->FillNtupleDColumn(0, 14, -1.0);
-      analysisManager->FillNtupleIColumn(0, 15, kThresholdScanPe[i]);
+      analysisManager->FillNtupleDColumn(0, 11, -1.0);
+      analysisManager->FillNtupleDColumn(0, 12, -1.0);
+      analysisManager->FillNtupleIColumn(0, 13, -1);
+      analysisManager->FillNtupleIColumn(0, 14, -1);
+      analysisManager->FillNtupleDColumn(0, 15, -1.0);
+      analysisManager->FillNtupleDColumn(0, 16, -1.0);
+      analysisManager->FillNtupleIColumn(0, 17, kThresholdScanPe[i]);
       analysisManager->FillNtupleDColumn(
-          0, 16, gThresholdScanCounts[i] > 0
+          0, 18, gThresholdScanCounts[i] > 0
                      ? gThresholdScanTimeSumNs[i] / gThresholdScanCounts[i]
                      : -1.0);
       analysisManager->FillNtupleDColumn(
-          0, 17, ComputeSigmaNs(gThresholdScanTimeSumNs[i],
+          0, 19, ComputeSigmaNs(gThresholdScanTimeSumNs[i],
                                 gThresholdScanTimeSqSumNs[i],
                                 gThresholdScanCounts[i]));
       for (int j = 0; j < ScintillatorDigi::kMaxStoredPhotoelectronArrivals; ++j) {
@@ -302,24 +308,26 @@ void RunAction::RecordDigi(const ScintillatorDigi& digi) {
   analysisManager->FillNtupleDColumn(3, digi.GetPrimaryMomentum() / CLHEP::MeV);
   analysisManager->FillNtupleDColumn(4,
                                      digi.GetPrimaryMuonTrackLength() / CLHEP::mm);
-  analysisManager->FillNtupleDColumn(5, digi.GetEnergyDeposit() / CLHEP::MeV);
-  analysisManager->FillNtupleIColumn(6, digi.GetScintillationPhotons());
-  analysisManager->FillNtupleIColumn(7, digi.GetPmtIncidentPhotons());
-  analysisManager->FillNtupleDColumn(8, digi.GetDetectedPhotoelectrons());
-  analysisManager->FillNtupleDColumn(9, digi.GetFirstPmtHitTime() >= 0.0
+  analysisManager->FillNtupleDColumn(5, digi.GetPrimaryHitX() / CLHEP::mm);
+  analysisManager->FillNtupleDColumn(6, digi.GetPrimaryHitY() / CLHEP::mm);
+  analysisManager->FillNtupleDColumn(7, digi.GetEnergyDeposit() / CLHEP::MeV);
+  analysisManager->FillNtupleIColumn(8, digi.GetScintillationPhotons());
+  analysisManager->FillNtupleIColumn(9, digi.GetPmtIncidentPhotons());
+  analysisManager->FillNtupleDColumn(10, digi.GetDetectedPhotoelectrons());
+  analysisManager->FillNtupleDColumn(11, digi.GetFirstPmtHitTime() >= 0.0
                                             ? digi.GetFirstPmtHitTime() / CLHEP::ns
                                             : -1.0);
-  analysisManager->FillNtupleDColumn(10, digi.GetPmtCharge() / kPicocoulomb);
-  analysisManager->FillNtupleIColumn(11, digi.GetAdcCounts());
-  analysisManager->FillNtupleIColumn(12, digi.GetTriggered() ? 1 : 0);
-  analysisManager->FillNtupleDColumn(13, -1.0);
+  analysisManager->FillNtupleDColumn(12, digi.GetPmtCharge() / kPicocoulomb);
+  analysisManager->FillNtupleIColumn(13, digi.GetAdcCounts());
+  analysisManager->FillNtupleIColumn(14, digi.GetTriggered() ? 1 : 0);
+  analysisManager->FillNtupleDColumn(15, -1.0);
   analysisManager->FillNtupleDColumn(
-      14, digi.GetThreshold80TimeFromPrimary() >= 0.0
+      16, digi.GetThreshold80TimeFromPrimary() >= 0.0
               ? digi.GetThreshold80TimeFromPrimary() / CLHEP::ns
               : -1.0);
-  analysisManager->FillNtupleIColumn(15, -1);
-  analysisManager->FillNtupleDColumn(16, -1.0);
-  analysisManager->FillNtupleDColumn(17, -1.0);
+  analysisManager->FillNtupleIColumn(17, -1);
+  analysisManager->FillNtupleDColumn(18, -1.0);
+  analysisManager->FillNtupleDColumn(19, -1.0);
   for (int i = 0; i < ScintillatorDigi::kMaxStoredPhotoelectronArrivals; ++i) {
     analysisManager->FillNtupleDColumn(
         kArrivalTimeColumnOffset + i,

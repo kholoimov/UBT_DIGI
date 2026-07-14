@@ -21,6 +21,9 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
   const auto* track = step->GetTrack();
   if (track != nullptr && track->GetTrackID() == 1) {
     EventData::Instance().UpdatePrimaryHitTime(track->GetGlobalTime());
+    const auto& position = prePoint->GetPosition();
+    EventData::Instance().UpdatePrimaryHitPosition(position.x(), position.y(),
+                                                   position.z());
     if (track->GetDefinition()->GetParticleName() == "mu-") {
       EventData::Instance().AddPrimaryMuonTrackLength(step->GetStepLength());
     }

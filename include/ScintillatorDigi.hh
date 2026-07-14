@@ -18,6 +18,7 @@ class ScintillatorDigi : public G4VDigi {
   void SetPrimaryKineticEnergy(double value);
   void SetPrimaryMomentum(double value);
   void SetPrimaryMuonTrackLength(double value);
+  void SetPrimaryHitPosition(double x, double y, double z);
   void SetEnergyDeposit(double value);
   void SetScintillationPhotons(int value);
   void SetPmtIncidentPhotons(int value);
@@ -34,6 +35,9 @@ class ScintillatorDigi : public G4VDigi {
   double GetPrimaryKineticEnergy() const;
   double GetPrimaryMomentum() const;
   double GetPrimaryMuonTrackLength() const;
+  double GetPrimaryHitX() const;
+  double GetPrimaryHitY() const;
+  double GetPrimaryHitZ() const;
   double GetEnergyDeposit() const;
   int GetScintillationPhotons() const;
   int GetPmtIncidentPhotons() const;
@@ -54,6 +58,9 @@ class ScintillatorDigi : public G4VDigi {
   double fPrimaryKineticEnergy = 0.0;
   double fPrimaryMomentum = 0.0;
   double fPrimaryMuonTrackLength = 0.0;
+  double fPrimaryHitX = 0.0;
+  double fPrimaryHitY = 0.0;
+  double fPrimaryHitZ = 0.0;
   double fEnergyDeposit = 0.0;
   int fScintillationPhotons = 0;
   int fPmtIncidentPhotons = 0;
