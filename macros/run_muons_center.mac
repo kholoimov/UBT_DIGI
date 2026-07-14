@@ -1,6 +1,5 @@
 /run/numberOfThreads 80
-/ubt/gun/randomizeMuonPosition true
-/ubt/gun/muonBeamSpotHalfSize 15 mm
+/ubt/gun/randomizeMuonPosition false
 /run/initialize
 /gun/particle mu-
 /gun/position 0 0 -30 mm

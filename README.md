@@ -12,7 +12,8 @@ Standalone Geant4 example for a `40 x 40 x 10 mm^3` p-terphenyl scintillator wit
 
 - `main.cc`: application entry point
 - `include/`, `src/`: detector, gun, stepping, and digitization classes
-- `macros/run_muons.mac`: example run for muons
+- `macros/run_muons.mac`: example muon run with distributed beam spot
+- `macros/run_muons_center.mac`: example muon run shooting through the detector center
 - `macros/run_gammas.mac`: example run for gammas
 
 ## Build
@@ -168,6 +169,17 @@ The ROOT file also contains these run-level timing histograms:
 - `photoelectron_arrival_time_ns`: arrival-time distribution of detected photoelectrons at the sensor
 
 The console printout contains the same event-level information.
+
+## Muon Position Control
+
+Muon shooting can now be configured from the macro through:
+
+```text
+/ubt/gun/randomizeMuonPosition true|false
+/ubt/gun/muonBeamSpotHalfSize 15 mm
+```
+
+Use `randomizeMuonPosition false` to keep the muon at the gun position from the macro, or `true` to sample a square beam spot around it.
 
 ## Analysis
 
