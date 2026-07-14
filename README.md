@@ -102,7 +102,7 @@ Current constants in `src/ScintillatorDigitizerModule.cc`:
 - ADC scale = `1 count / pC`
 - trigger threshold = `0.20 MeV`
 - threshold timing observable = time to `5` detected photoelectrons from the primary hit time
-- threshold scan: timing sigma versus `{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40}` detected-photoelectron thresholds
+- threshold scan: timing sigma versus `{10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 140, 160, 180, 200}` detected-photoelectron thresholds
 
 Current constant in `src/PMTSensitiveDetector.cc`:
 
@@ -137,7 +137,24 @@ threshold_scan_pe
 threshold_scan_mean_ns
 threshold_scan_sigma_ns
 photoelectron_arrival_1_from_muon_ns
-...
+photoelectron_arrival_2_from_muon_ns
+photoelectron_arrival_3_from_muon_ns
+photoelectron_arrival_4_from_muon_ns
+photoelectron_arrival_5_from_muon_ns
+photoelectron_arrival_10_from_muon_ns
+photoelectron_arrival_20_from_muon_ns
+photoelectron_arrival_30_from_muon_ns
+photoelectron_arrival_40_from_muon_ns
+photoelectron_arrival_50_from_muon_ns
+photoelectron_arrival_60_from_muon_ns
+photoelectron_arrival_70_from_muon_ns
+photoelectron_arrival_80_from_muon_ns
+photoelectron_arrival_90_from_muon_ns
+photoelectron_arrival_100_from_muon_ns
+photoelectron_arrival_120_from_muon_ns
+photoelectron_arrival_140_from_muon_ns
+photoelectron_arrival_160_from_muon_ns
+photoelectron_arrival_180_from_muon_ns
 photoelectron_arrival_200_from_muon_ns
 ```
 
@@ -147,7 +164,7 @@ For normal event rows:
 - `primary_hit_x_mm` and `primary_hit_y_mm` store the first position where the primary enters the scintillator
 - `photoelectron_threshold_5_from_muon_ns` stores the event-by-event delay between the primary hit time and the moment the `5`th detected photoelectron arrives, or `-1` if the event never reaches `5` photoelectrons
 - `threshold_scan_pe`, `threshold_scan_mean_ns`, and `threshold_scan_sigma_ns` are set to `-1`
-- `photoelectron_arrival_1_from_muon_ns` through `photoelectron_arrival_200_from_muon_ns` store the arrival times of the `1`st through `200`th detected photoelectrons relative to the primary hit time, or `-1` when that photoelectron index is not reached in the event
+- the `photoelectron_arrival_*_from_muon_ns` branches are stored only for the thresholds `{1, 2, 3, 4, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 140, 160, 180, 200}`, with `-1` when that photoelectron index is not reached in the event
 
 At the end of each run, the code appends one extra row to the same `events` tree with:
 
@@ -155,7 +172,7 @@ At the end of each run, the code appends one extra row to the same `events` tree
 - `primary_particle = RUN_SUMMARY`
 - `scintillation_production_fwhm_ns` filled with the run-level FWHM of `scintillation_production_time_ns`
 - `photoelectron_threshold_5_from_muon_ns` filled with the run-average of the valid event `t5` values
-- `photoelectron_arrival_1_from_muon_ns` through `photoelectron_arrival_200_from_muon_ns` set to `-1`
+- all stored `photoelectron_arrival_*_from_muon_ns` branches set to `-1`
 
 The code also appends one `THRESHOLD_SCAN` row per threshold to the same `events` tree with:
 
@@ -164,7 +181,7 @@ The code also appends one `THRESHOLD_SCAN` row per threshold to the same `events
 - `threshold_scan_pe` set to the detected-photoelectron threshold
 - `threshold_scan_mean_ns` set to the run-level mean threshold-crossing time
 - `threshold_scan_sigma_ns` set to the run-level sigma of the threshold-crossing time
-- `photoelectron_arrival_1_from_muon_ns` through `photoelectron_arrival_200_from_muon_ns` set to `-1`
+- all stored `photoelectron_arrival_*_from_muon_ns` branches set to `-1`
 
 The ROOT file also contains a `pmt_photon_births` ntuple with one row per photon that reaches the sensor:
 
@@ -212,10 +229,11 @@ The repository includes a ROOT C++ macro at [analysis/plot_event_observables.C](
 - photons arriving at the sensor vs produced scintillation photons
 - detected photoelectrons vs produced scintillation photons
 - timing sigma vs photoelectron threshold requirement
+- timing-distribution overlay for scintillation births, detected-photon births, and detected-photon arrivals
 - muon-hit position heatmap in the scintillator
 - birth-position heatmap for photons that reach the sensor
 - arrival-time overlay histograms for selected photoelectron indices
-- mean arrival time vs photoelectron index (`1..200`)
+- mean arrival time vs the stored photoelectron indices
 
 Run it with:
 

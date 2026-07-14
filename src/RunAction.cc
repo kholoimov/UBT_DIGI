@@ -20,8 +20,12 @@ constexpr int kTimingHistogramBins = 200;
 constexpr double kTimingHistogramMinNs = 0.0;
 constexpr double kTimingHistogramMaxNs = 50.0;
 constexpr int kArrivalTimeColumnOffset = 20;
-constexpr std::array<int, 13> kThresholdScanPe = {1, 2, 3, 4, 5, 6, 7,
-                                                  8, 9, 10, 20, 30, 40};
+constexpr std::array<int, 20> kStoredArrivalPe = {1,  2,  3,  4,  5,  10, 20,
+                                                  30, 40, 50, 60, 70, 80, 90,
+                                                  100, 120, 140, 160, 180, 200};
+constexpr std::array<int, 15> kThresholdScanPe = {10, 20, 30, 40, 50,
+                                                  60, 70, 80, 90, 100,
+                                                  120, 140, 160, 180, 200};
 
 G4Mutex gTimingHistogramMutex = G4MUTEX_INITIALIZER;
 std::array<int, kTimingHistogramBins> gScintillationTimingCounts = {};
@@ -173,9 +177,10 @@ RunAction::RunAction() {
   analysisManager->CreateNtupleIColumn("threshold_scan_pe");
   analysisManager->CreateNtupleDColumn("threshold_scan_mean_ns");
   analysisManager->CreateNtupleDColumn("threshold_scan_sigma_ns");
-  for (int i = 1; i <= ScintillatorDigi::kMaxStoredPhotoelectronArrivals; ++i) {
+  for (int thresholdPe : kStoredArrivalPe) {
     analysisManager->CreateNtupleDColumn(
-        "photoelectron_arrival_" + std::to_string(i) + "_from_muon_ns");
+        "photoelectron_arrival_" + std::to_string(thresholdPe) +
+        "_from_muon_ns");
   }
   analysisManager->FinishNtuple();
   analysisManager->CreateNtuple("pmt_photon_births",
@@ -241,7 +246,7 @@ void RunAction::EndOfRunAction(const G4Run*) {
     analysisManager->FillNtupleIColumn(0, 17, -1);
     analysisManager->FillNtupleDColumn(0, 18, -1.0);
     analysisManager->FillNtupleDColumn(0, 19, -1.0);
-    for (int i = 0; i < ScintillatorDigi::kMaxStoredPhotoelectronArrivals; ++i) {
+    for (std::size_t i = 0; i < kStoredArrivalPe.size(); ++i) {
       analysisManager->FillNtupleDColumn(0, kArrivalTimeColumnOffset + i, -1.0);
     }
     analysisManager->AddNtupleRow(0);
@@ -273,7 +278,7 @@ void RunAction::EndOfRunAction(const G4Run*) {
           0, 19, ComputeSigmaNs(gThresholdScanTimeSumNs[i],
                                 gThresholdScanTimeSqSumNs[i],
                                 gThresholdScanCounts[i]));
-      for (int j = 0; j < ScintillatorDigi::kMaxStoredPhotoelectronArrivals; ++j) {
+      for (std::size_t j = 0; j < kStoredArrivalPe.size(); ++j) {
         analysisManager->FillNtupleDColumn(
             0, kArrivalTimeColumnOffset + j, -1.0);
       }
@@ -335,11 +340,12 @@ void RunAction::RecordDigi(const ScintillatorDigi& digi) {
   analysisManager->FillNtupleIColumn(17, -1);
   analysisManager->FillNtupleDColumn(18, -1.0);
   analysisManager->FillNtupleDColumn(19, -1.0);
-  for (int i = 0; i < ScintillatorDigi::kMaxStoredPhotoelectronArrivals; ++i) {
+  for (std::size_t i = 0; i < kStoredArrivalPe.size(); ++i) {
     analysisManager->FillNtupleDColumn(
         kArrivalTimeColumnOffset + i,
-        digi.GetPhotoelectronArrivalTime(i) >= 0.0
-            ? digi.GetPhotoelectronArrivalTime(i) / CLHEP::ns
+        digi.GetPhotoelectronArrivalTime(kStoredArrivalPe[i] - 1) >= 0.0
+            ? digi.GetPhotoelectronArrivalTime(kStoredArrivalPe[i] - 1) /
+                  CLHEP::ns
             : -1.0);
   }
   analysisManager->AddNtupleRow();

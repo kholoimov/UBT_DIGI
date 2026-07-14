@@ -18,8 +18,13 @@
 #include <vector>
 
 namespace {
-constexpr int kMaxArrivalIndices = 200;
+constexpr std::array<int, 20> kStoredArrivalPe = {1,  2,  3,  4,  5,  10, 20,
+                                                  30, 40, 50, 60, 70, 80, 90,
+                                                  100, 120, 140, 160, 180, 200};
 constexpr std::array<int, 7> kOverlayIndices = {1, 5, 10, 20, 50, 100, 200};
+constexpr std::array<int, 15> kThresholdScanPe = {10, 20, 30, 40, 50,
+                                                  60, 70, 80, 90, 100,
+                                                  120, 140, 160, 180, 200};
 
 void ConfigureStyle() {
   gROOT->SetBatch(kTRUE);
@@ -92,6 +97,8 @@ void plot_event_observables(
     return;
   }
   auto* pmtPhotonBirths = dynamic_cast<TTree*>(file->Get("pmt_photon_births"));
+  auto* scintPhotonBirthTimes =
+      dynamic_cast<TTree*>(file->Get("scintillation_photon_birth_times"));
 
   int eventId = -1;
   char primaryParticle[128] = {};
@@ -104,7 +111,7 @@ void plot_event_observables(
   int thresholdScanPe = -1;
   double pmtChargePC = 0;
   double thresholdScanSigmaNs = -1.0;
-  std::array<double, kMaxArrivalIndices> arrivalTimesNs = {};
+  std::array<double, kStoredArrivalPe.size()> arrivalTimesNs = {};
 
   events->SetBranchAddress("event_id", &eventId);
   events->SetBranchAddress("primary_particle", primaryParticle);
@@ -117,9 +124,10 @@ void plot_event_observables(
   events->SetBranchAddress("photoelectrons", &photoelectrons);
   events->SetBranchAddress("threshold_scan_pe", &thresholdScanPe);
   events->SetBranchAddress("threshold_scan_sigma_ns", &thresholdScanSigmaNs);
-  for (int i = 0; i < kMaxArrivalIndices; ++i) {
+  for (std::size_t i = 0; i < kStoredArrivalPe.size(); ++i) {
     const TString branchName =
-        TString::Format("photoelectron_arrival_%d_from_muon_ns", i + 1);
+        TString::Format("photoelectron_arrival_%d_from_muon_ns",
+                        kStoredArrivalPe[i]);
     events->SetBranchAddress(branchName, &arrivalTimesNs[i]);
   }
 
@@ -157,12 +165,24 @@ void plot_event_observables(
     "pmt_charge_pc_histogram",
     100, 100, 600
   );
+  auto scintBirthTimeHistogram = std::make_unique<TH1D>(
+      "scintillation_birth_time_histogram",
+      "Scintillation and Detected-Photon Timing;time [ns];counts",
+      160, 0.0, 8.0);
+  auto detectedPhotonBirthTimeHistogram = std::make_unique<TH1D>(
+      "detected_photon_birth_time_histogram",
+      "Scintillation and Detected-Photon Timing;time [ns];counts",
+      160, 0.0, 8.0);
+  auto detectedPhotonArrivalTimeHistogram = std::make_unique<TH1D>(
+      "detected_photon_arrival_time_histogram",
+      "Scintillation and Detected-Photon Timing;time [ns];counts",
+      160, 0.0, 8.0);
 
   std::vector<double> thresholdValues;
   std::vector<double> sigmaValues;
-  std::array<double, kMaxArrivalIndices> arrivalTimeSumsNs = {};
-  std::array<double, kMaxArrivalIndices> arrivalTimeSqSumsNs = {};
-  std::array<int, kMaxArrivalIndices> arrivalTimeCounts = {};
+  std::array<double, kStoredArrivalPe.size()> arrivalTimeSumsNs = {};
+  std::array<double, kStoredArrivalPe.size()> arrivalTimeSqSumsNs = {};
+  std::array<int, kStoredArrivalPe.size()> arrivalTimeCounts = {};
   std::vector<std::unique_ptr<TH1D>> overlayHistograms;
   overlayHistograms.reserve(kOverlayIndices.size());
   for (int index : kOverlayIndices) {
@@ -190,7 +210,7 @@ void plot_event_observables(
 
       pmt_charge_pc_histogram->Fill(pmtChargePC);
 
-      for (int j = 0; j < kMaxArrivalIndices; ++j) {
+      for (std::size_t j = 0; j < kStoredArrivalPe.size(); ++j) {
         if (arrivalTimesNs[j] >= 0.0) {
           arrivalTimeSumsNs[j] += arrivalTimesNs[j];
           arrivalTimeSqSumsNs[j] += arrivalTimesNs[j] * arrivalTimesNs[j];
@@ -199,9 +219,16 @@ void plot_event_observables(
       }
 
       for (std::size_t j = 0; j < kOverlayIndices.size(); ++j) {
-        const int index = kOverlayIndices[j] - 1;
-        if (arrivalTimesNs[index] >= 0.0) {
-          overlayHistograms[j]->Fill(arrivalTimesNs[index]);
+        const auto overlayIt =
+            std::find(kStoredArrivalPe.begin(), kStoredArrivalPe.end(),
+                      kOverlayIndices[j]);
+        if (overlayIt != kStoredArrivalPe.end()) {
+          const std::size_t index =
+              static_cast<std::size_t>(std::distance(kStoredArrivalPe.begin(),
+                                                     overlayIt));
+          if (arrivalTimesNs[index] >= 0.0) {
+            overlayHistograms[j]->Fill(arrivalTimesNs[index]);
+          }
         }
       }
     }
@@ -401,13 +428,21 @@ void plot_event_observables(
   }
 
   if (thresholdValues.empty()) {
-    for (int i = 0; i < kMaxArrivalIndices; ++i) {
-      if (arrivalTimeCounts[i] > 1) {
-        const double meanNs = arrivalTimeSumsNs[i] / arrivalTimeCounts[i];
+    for (int thresholdPe : kThresholdScanPe) {
+      const auto thresholdIt =
+          std::find(kStoredArrivalPe.begin(), kStoredArrivalPe.end(),
+                    thresholdPe);
+      if (thresholdIt != kStoredArrivalPe.end()) {
+        const std::size_t index = static_cast<std::size_t>(
+            std::distance(kStoredArrivalPe.begin(), thresholdIt));
+        if (arrivalTimeCounts[index] <= 1) {
+          continue;
+        }
+        const double meanNs = arrivalTimeSumsNs[index] / arrivalTimeCounts[index];
         const double varianceNs =
-            std::max(0.0, (arrivalTimeSqSumsNs[i] / arrivalTimeCounts[i]) -
+            std::max(0.0, (arrivalTimeSqSumsNs[index] / arrivalTimeCounts[index]) -
                                meanNs * meanNs);
-        thresholdValues.push_back(i + 1);
+        thresholdValues.push_back(thresholdPe);
         sigmaValues.push_back(std::sqrt(varianceNs));
       }
     }
@@ -441,13 +476,19 @@ void plot_event_observables(
   if (pmtPhotonBirths != nullptr) {
     double birthXmm = 0.0;
     double birthYmm = 0.0;
+    double birthTimeNs = 0.0;
+    double arrivalTimeNs = 0.0;
     pmtPhotonBirths->SetBranchAddress("birth_x_mm", &birthXmm);
     pmtPhotonBirths->SetBranchAddress("birth_y_mm", &birthYmm);
+    pmtPhotonBirths->SetBranchAddress("birth_time_ns", &birthTimeNs);
+    pmtPhotonBirths->SetBranchAddress("arrival_time_ns", &arrivalTimeNs);
 
     const Long64_t birthEntries = pmtPhotonBirths->GetEntries();
     for (Long64_t i = 0; i < birthEntries; ++i) {
       pmtPhotonBirths->GetEntry(i);
       photonBirthMap->Fill(birthXmm, birthYmm);
+      detectedPhotonBirthTimeHistogram->Fill(birthTimeNs);
+      detectedPhotonArrivalTimeHistogram->Fill(arrivalTimeNs);
     }
 
     TCanvas canvas("c_pmt_photon_birth_map",
@@ -458,6 +499,61 @@ void plot_event_observables(
     std::cerr << "No 'pmt_photon_births' tree found; birth-position map was not "
                  "produced."
               << std::endl;
+  }
+
+  if (scintPhotonBirthTimes != nullptr) {
+    double birthTimeNs = 0.0;
+    scintPhotonBirthTimes->SetBranchAddress("birth_time_ns", &birthTimeNs);
+
+    const Long64_t scintBirthEntries = scintPhotonBirthTimes->GetEntries();
+    for (Long64_t i = 0; i < scintBirthEntries; ++i) {
+      scintPhotonBirthTimes->GetEntry(i);
+      scintBirthTimeHistogram->Fill(birthTimeNs);
+    }
+  } else {
+    std::cerr << "No 'scintillation_photon_birth_times' tree found; timing "
+                 "birth-time histogram for all scintillation photons was not "
+                 "produced."
+              << std::endl;
+  }
+
+  if (scintBirthTimeHistogram->GetEntries() > 0.0 ||
+      detectedPhotonBirthTimeHistogram->GetEntries() > 0.0 ||
+      detectedPhotonArrivalTimeHistogram->GetEntries() > 0.0) {
+    TCanvas canvas("c_timing_distributions", "Photon Timing Distributions",
+                   1100, 800);
+    canvas.SetLogy();
+
+    scintBirthTimeHistogram->SetLineColor(kBlue + 1);
+    scintBirthTimeHistogram->SetLineWidth(3);
+    detectedPhotonBirthTimeHistogram->SetLineColor(kGreen + 2);
+    detectedPhotonBirthTimeHistogram->SetLineWidth(3);
+    detectedPhotonArrivalTimeHistogram->SetLineColor(kRed + 1);
+    detectedPhotonArrivalTimeHistogram->SetLineWidth(3);
+
+    const double maxCounts = std::max(
+        scintBirthTimeHistogram->GetMaximum(),
+        std::max(detectedPhotonBirthTimeHistogram->GetMaximum(),
+                 detectedPhotonArrivalTimeHistogram->GetMaximum()));
+    if (maxCounts > 0.0) {
+      scintBirthTimeHistogram->SetMaximum(maxCounts * 1.4);
+      scintBirthTimeHistogram->SetMinimum(0.5);
+    }
+
+    scintBirthTimeHistogram->Draw("HIST");
+    detectedPhotonBirthTimeHistogram->Draw("HIST SAME");
+    detectedPhotonArrivalTimeHistogram->Draw("HIST SAME");
+
+    TLegend legend(0.56, 0.68, 0.88, 0.88);
+    legend.AddEntry(scintBirthTimeHistogram.get(),
+                    "All scintillation photon births", "l");
+    legend.AddEntry(detectedPhotonBirthTimeHistogram.get(),
+                    "Births of photons reaching sensor", "l");
+    legend.AddEntry(detectedPhotonArrivalTimeHistogram.get(),
+                    "Arrivals of photons reaching sensor", "l");
+    legend.Draw();
+
+    SaveCanvas(canvas, outputDir, "timing_distributions");
   }
 
   {
@@ -499,12 +595,12 @@ void plot_event_observables(
   {
     std::vector<double> arrivalIndices;
     std::vector<double> meanArrivalTimesNs;
-    arrivalIndices.reserve(kMaxArrivalIndices);
-    meanArrivalTimesNs.reserve(kMaxArrivalIndices);
+    arrivalIndices.reserve(kStoredArrivalPe.size());
+    meanArrivalTimesNs.reserve(kStoredArrivalPe.size());
 
-    for (int i = 0; i < kMaxArrivalIndices; ++i) {
+    for (std::size_t i = 0; i < kStoredArrivalPe.size(); ++i) {
       if (arrivalTimeCounts[i] > 0) {
-        arrivalIndices.push_back(i + 1);
+        arrivalIndices.push_back(kStoredArrivalPe[i]);
         meanArrivalTimesNs.push_back(arrivalTimeSumsNs[i] / arrivalTimeCounts[i]);
       }
     }
