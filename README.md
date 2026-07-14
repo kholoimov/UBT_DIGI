@@ -179,6 +179,8 @@ Muon shooting can now be configured from the macro through:
 /ubt/gun/muonBeamSpotHalfSize 15 mm
 ```
 
+These commands become available after `/run/initialize`, because the primary generator is constructed at initialization time.
+
 Use `randomizeMuonPosition false` to keep the muon at the gun position from the macro, or `true` to sample a square beam spot around it.
 
 ## Analysis
