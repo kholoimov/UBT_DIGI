@@ -544,6 +544,59 @@ void plot_event_observables(
     detectedPhotonBirthTimeHistogram->Draw("HIST SAME");
     detectedPhotonArrivalTimeHistogram->Draw("HIST SAME");
 
+    double fittedMeanNs = -1.0;
+    double fittedMpvNs = -1.0;
+    double fittedSigmaNs = -1.0;
+    if (scintBirthTimeHistogram->GetEntries() > 0.0) {
+      const int peakBin = scintBirthTimeHistogram->GetMaximumBin();
+      const double peakX = scintBirthTimeHistogram->GetBinCenter(peakBin);
+      const double peakY = scintBirthTimeHistogram->GetBinContent(peakBin);
+      const double binWidth =
+          scintBirthTimeHistogram->GetXaxis()->GetBinWidth(1);
+      const double fitMin = std::max(
+          0.0, scintBirthTimeHistogram->GetXaxis()->GetXmin() + binWidth);
+      const double fitMax = 4.0;
+
+      TF1 scintBirthFit(
+          "scint_birth_fit",
+          [binWidth](double* x, double* p) {
+            return binWidth * gammaComponent(x[0], p[0], p[1], p[2], p[3]);
+          },
+          fitMin, fitMax, 4);
+      scintBirthFit.SetParNames("Area", "x0", "k", "theta");
+      scintBirthFit.SetParameters(
+          scintBirthTimeHistogram->Integral(), 0.02, 2.5,
+          std::max(0.05, peakX / 3.0));
+      scintBirthFit.SetParLimits(0, 0.0,
+                                 10.0 * scintBirthTimeHistogram->Integral());
+      scintBirthFit.SetParLimits(1, 0.0, 0.3);
+      scintBirthFit.SetParLimits(2, 1.01, 20.0);
+      scintBirthFit.SetParLimits(3, 0.02, 2.5);
+      scintBirthFit.SetLineColor(kBlue + 3);
+      scintBirthFit.SetLineWidth(3);
+
+      scintBirthTimeHistogram->Fit(&scintBirthFit, "R0Q");
+      scintBirthFit.Draw("SAME");
+
+      const double x0 = scintBirthFit.GetParameter(1);
+      const double k = scintBirthFit.GetParameter(2);
+      const double theta = scintBirthFit.GetParameter(3);
+      fittedMeanNs = x0 + k * theta;
+      fittedMpvNs = k > 1.0 ? x0 + (k - 1.0) * theta : x0;
+      fittedSigmaNs = std::sqrt(k) * theta;
+
+      TLatex fitLabel;
+      fitLabel.SetNDC(true);
+      fitLabel.SetTextSize(0.032);
+      fitLabel.SetTextColor(kBlue + 3);
+      fitLabel.DrawLatex(0.57, 0.60,
+                         Form("Blue fit mean = %.3f ns", fittedMeanNs));
+      fitLabel.DrawLatex(0.57, 0.56,
+                         Form("Blue fit MPV = %.3f ns", fittedMpvNs));
+      fitLabel.DrawLatex(0.57, 0.52,
+                         Form("Blue fit #sigma = %.3f ns", fittedSigmaNs));
+    }
+
     TLegend legend(0.56, 0.68, 0.88, 0.88);
     legend.AddEntry(scintBirthTimeHistogram.get(),
                     "All scintillation photon births", "l");
@@ -551,6 +604,9 @@ void plot_event_observables(
                     "Births of photons reaching sensor", "l");
     legend.AddEntry(detectedPhotonArrivalTimeHistogram.get(),
                     "Arrivals of photons reaching sensor", "l");
+    if (scintBirthTimeHistogram->GetEntries() > 0.0) {
+      legend.AddEntry((TObject*)nullptr, "Blue curve fit: shifted gamma", "");
+    }
     legend.Draw();
 
     SaveCanvas(canvas, outputDir, "timing_distributions");
