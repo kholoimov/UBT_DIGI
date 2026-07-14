@@ -176,6 +176,13 @@ RunAction::RunAction() {
         "photoelectron_arrival_" + std::to_string(i) + "_from_muon_ns");
   }
   analysisManager->FinishNtuple();
+  analysisManager->CreateNtuple("pmt_photon_births",
+                                "Birth positions of photons that reached the sensor");
+  analysisManager->CreateNtupleIColumn("event_id");
+  analysisManager->CreateNtupleDColumn("birth_x_mm");
+  analysisManager->CreateNtupleDColumn("birth_y_mm");
+  analysisManager->CreateNtupleDColumn("birth_z_mm");
+  analysisManager->FinishNtuple();
 }
 
 RunAction::~RunAction() {
@@ -321,6 +328,14 @@ void RunAction::RecordDigi(const ScintillatorDigi& digi) {
             : -1.0);
   }
   analysisManager->AddNtupleRow();
+
+  for (const auto& position : EventData::Instance().GetPmtIncidentPhotonBirthPositions()) {
+    analysisManager->FillNtupleIColumn(1, 0, digi.GetEventID());
+    analysisManager->FillNtupleDColumn(1, 1, position[0] / CLHEP::mm);
+    analysisManager->FillNtupleDColumn(1, 2, position[1] / CLHEP::mm);
+    analysisManager->FillNtupleDColumn(1, 3, position[2] / CLHEP::mm);
+    analysisManager->AddNtupleRow(1);
+  }
 
   for (const double time : EventData::Instance().GetScintillationPhotonTimes()) {
     analysisManager->FillH1(0, time / CLHEP::ns);

@@ -163,6 +163,15 @@ The code also appends one `THRESHOLD_SCAN` row per threshold to the same `events
 - `threshold_scan_sigma_ns` set to the run-level sigma of the threshold-crossing time
 - `photoelectron_arrival_1_from_muon_ns` through `photoelectron_arrival_200_from_muon_ns` set to `-1`
 
+The ROOT file also contains a `pmt_photon_births` ntuple with one row per photon that reaches the sensor:
+
+```text
+event_id
+birth_x_mm
+birth_y_mm
+birth_z_mm
+```
+
 The ROOT file also contains these run-level timing histograms:
 
 - `scintillation_production_time_ns`: production-time distribution of scintillation photons created inside the scintillator
@@ -191,6 +200,7 @@ The repository includes a ROOT C++ macro at [analysis/plot_event_observables.C](
 - photons arriving at the sensor vs produced scintillation photons
 - detected photoelectrons vs produced scintillation photons
 - timing sigma vs photoelectron threshold requirement
+- birth-position heatmap for photons that reach the sensor
 - arrival-time overlay histograms for selected photoelectron indices
 - mean arrival time vs photoelectron index (`1..200`)
 

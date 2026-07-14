@@ -17,6 +17,7 @@ void EventData::Reset() {
   fPmtIncidentPhotons = 0;
   fPmtPhotoelectrons = 0;
   fFirstPmtHitTime = -1.0;
+  fPmtIncidentPhotonBirthPositions.clear();
   fPmtPhotoelectronTimes.clear();
 }
 
@@ -52,8 +53,10 @@ void EventData::AddPrimaryMuonTrackLength(double length) {
   fPrimaryMuonTrackLength += length;
 }
 
-void EventData::AddPmtIncidentPhoton(double time) {
+void EventData::AddPmtIncidentPhoton(double time, double birthX, double birthY,
+                                     double birthZ) {
   ++fPmtIncidentPhotons;
+  fPmtIncidentPhotonBirthPositions.push_back({birthX, birthY, birthZ});
   if (fFirstPmtHitTime < 0.0 || time < fFirstPmtHitTime) {
     fFirstPmtHitTime = time;
   }
@@ -91,6 +94,11 @@ int EventData::GetPmtIncidentPhotons() const { return fPmtIncidentPhotons; }
 int EventData::GetPmtPhotoelectrons() const { return fPmtPhotoelectrons; }
 
 double EventData::GetFirstPmtHitTime() const { return fFirstPmtHitTime; }
+
+const std::vector<std::array<double, 3>>&
+EventData::GetPmtIncidentPhotonBirthPositions() const {
+  return fPmtIncidentPhotonBirthPositions;
+}
 
 const std::vector<double>& EventData::GetPmtPhotoelectronTimes() const {
   return fPmtPhotoelectronTimes;

@@ -91,6 +91,7 @@ void plot_event_observables(
     std::cerr << "Could not find TTree 'events' in " << inputFile << std::endl;
     return;
   }
+  auto* pmtPhotonBirths = dynamic_cast<TTree*>(file->Get("pmt_photon_births"));
 
   int eventId = -1;
   char primaryParticle[128] = {};
@@ -138,6 +139,10 @@ void plot_event_observables(
       120, 15000.0, 40000.0, 120, 100.0, 400.0);
   auto peVsPhotonsProfile = std::make_unique<TProfile>(
       "photoelectrons_vs_scintillation_photons_profile", "", 120, 15000.0, 40000.0);
+  auto photonBirthMap = std::make_unique<TH2D>(
+      "pmt_photon_birth_map",
+      "Birth Positions of Photons Reaching Sensor;birth x [mm];birth y [mm]",
+      41, -20.5, 20.5, 41, -20.5, 20.5);
 
   auto pmt_charge_pc_histogram = std::make_unique<TH1D>(
     "pmt_charge_pc_histogram",
@@ -421,6 +426,28 @@ void plot_event_observables(
     SaveCanvas(canvas, outputDir, "timing_sigma_vs_threshold");
   } else {
     std::cerr << "No threshold information could be built from the events tree."
+              << std::endl;
+  }
+
+  if (pmtPhotonBirths != nullptr) {
+    double birthXmm = 0.0;
+    double birthYmm = 0.0;
+    pmtPhotonBirths->SetBranchAddress("birth_x_mm", &birthXmm);
+    pmtPhotonBirths->SetBranchAddress("birth_y_mm", &birthYmm);
+
+    const Long64_t birthEntries = pmtPhotonBirths->GetEntries();
+    for (Long64_t i = 0; i < birthEntries; ++i) {
+      pmtPhotonBirths->GetEntry(i);
+      photonBirthMap->Fill(birthXmm, birthYmm);
+    }
+
+    TCanvas canvas("c_pmt_photon_birth_map",
+                   "Birth Positions of Photons Reaching Sensor", 900, 800);
+    photonBirthMap->Draw("COLZ");
+    SaveCanvas(canvas, outputDir, "pmt_photon_birth_map");
+  } else {
+    std::cerr << "No 'pmt_photon_births' tree found; birth-position map was not "
+                 "produced."
               << std::endl;
   }
 

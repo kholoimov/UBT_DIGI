@@ -35,7 +35,10 @@ G4bool PMTSensitiveDetector::ProcessHits(G4Step* step, G4TouchableHistory*) {
     return true;
   }
 
-  EventData::Instance().AddPmtIncidentPhoton(track->GetGlobalTime());
+  const auto& vertexPosition = track->GetVertexPosition();
+  EventData::Instance().AddPmtIncidentPhoton(
+      track->GetGlobalTime(), vertexPosition.x(), vertexPosition.y(),
+      vertexPosition.z());
   if (G4UniformRand() < kPhotonDetectionEfficiency) {
     EventData::Instance().AddPmtPhotoelectron(track->GetGlobalTime());
   }
