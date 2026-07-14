@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 enable_testing()
 
 find_package(Geant4 REQUIRED ui_all vis_all)
+find_package(ROOT REQUIRED COMPONENTS Core Hist Graf Gpad)
 
 include(${Geant4_USE_FILE})
 include_directories(${PROJECT_SOURCE_DIR}/include)
@@ -26,9 +27,13 @@ install(TARGETS ubt_scintillator DESTINATION bin)
 
 add_executable(ubt_timing_model_validation tests/validate_timing_model.cc)
 target_include_directories(ubt_timing_model_validation PRIVATE
-                           ${PROJECT_SOURCE_DIR}/include)
+                           ${PROJECT_SOURCE_DIR}/include
+                           ${ROOT_INCLUDE_DIRS})
+target_link_libraries(ubt_timing_model_validation ${ROOT_LIBRARIES})
 
 add_test(
   NAME timing_model_validation
   COMMAND ubt_timing_model_validation
-          --samples 200000)
+          --samples 200000
+          --output-root-file timing_model_validation.root
+          --output-plot-file timing_model_validation.pdf)

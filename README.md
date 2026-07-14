@@ -278,6 +278,11 @@ There is also a compiled timing-only validator registered with CTest. It uses th
 ctest -R timing_model_validation --output-on-failure
 ```
 
+That test also writes these artifacts in the build directory:
+
+- `timing_model_validation.root`
+- `timing_model_validation.pdf`
+
 The executable can also be run directly with optional numeric targets:
 
 ```bash

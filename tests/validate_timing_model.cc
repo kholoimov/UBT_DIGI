@@ -1,5 +1,13 @@
 #include "TimingModelParameters.hh"
 
+#include "TCanvas.h"
+#include "TFile.h"
+#include "TH1D.h"
+#include "TLatex.h"
+#include "TLegend.h"
+#include "TROOT.h"
+#include "TStyle.h"
+
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -19,8 +27,18 @@ struct Options {
   double toleranceRiseNs = 0.20;
   double targetFallNs = -1.0;
   double toleranceFallNs = 0.80;
+  std::string outputRootFile = "timing_model_validation.root";
+  std::string outputPlotFile = "timing_model_validation.pdf";
   bool verbose = true;
 };
+
+void ConfigureRootStyle() {
+  gROOT->SetBatch(kTRUE);
+  gStyle->SetTitleFontSize(0.04);
+  gStyle->SetPadLeftMargin(0.12);
+  gStyle->SetPadRightMargin(0.08);
+  gStyle->SetPadBottomMargin(0.12);
+}
 
 double TimingPdf(double timeNs, double riseNs, double decayNs) {
   if (timeNs < 0.0 || riseNs <= 0.0 || decayNs <= riseNs) {
@@ -153,6 +171,10 @@ Options ParseOptions(int argc, char** argv) {
       options.targetFallNs = std::stod(requireValue(arg));
     } else if (arg == "--tolerance-fall-ns") {
       options.toleranceFallNs = std::stod(requireValue(arg));
+    } else if (arg == "--output-root-file") {
+      options.outputRootFile = requireValue(arg);
+    } else if (arg == "--output-plot-file") {
+      options.outputPlotFile = requireValue(arg);
     } else if (arg == "--quiet") {
       options.verbose = false;
     } else {
@@ -167,6 +189,7 @@ Options ParseOptions(int argc, char** argv) {
 
 int main(int argc, char** argv) {
   const Options options = ParseOptions(argc, argv);
+  ConfigureRootStyle();
 
   constexpr double riseNs = TimingModelParameters::kRiseTimeNs;
   constexpr double fastDecayNs = TimingModelParameters::kFastDecayTimeNs;
@@ -182,11 +205,28 @@ int main(int argc, char** argv) {
 
   std::vector<double> samples;
   samples.reserve(static_cast<std::size_t>(options.samples));
+  TH1D timingHistogram("timing_model_distribution",
+                       "Compiled Timing-Model Validation;time [ns];counts", 800,
+                       0.0, timeMaxNs);
+  TH1D fastHistogram("timing_model_fast_component",
+                     "Compiled Timing-Model Validation;time [ns];counts", 800,
+                     0.0, timeMaxNs);
+  TH1D slowHistogram("timing_model_slow_component",
+                     "Compiled Timing-Model Validation;time [ns];counts", 800,
+                     0.0, timeMaxNs);
 
   for (int i = 0; i < options.samples; ++i) {
     const bool useFast = componentDist(rng) < fastWeight;
-    samples.push_back(useFast ? SampleComponent(rng, riseNs, fastDecayNs, timeMaxNs)
-                              : SampleComponent(rng, riseNs, slowDecayNs, timeMaxNs));
+    const double sample =
+        useFast ? SampleComponent(rng, riseNs, fastDecayNs, timeMaxNs)
+                : SampleComponent(rng, riseNs, slowDecayNs, timeMaxNs);
+    samples.push_back(sample);
+    timingHistogram.Fill(sample);
+    if (useFast) {
+      fastHistogram.Fill(sample);
+    } else {
+      slowHistogram.Fill(sample);
+    }
   }
 
   std::sort(samples.begin(), samples.end());
@@ -221,7 +261,49 @@ int main(int argc, char** argv) {
     std::cout << "  fwhm_ns=" << fwhmNs << '\n';
     std::cout << "  rise10to90_ns=" << rise10to90Ns << '\n';
     std::cout << "  fall_proxy_ns=" << fall90to10Ns << '\n';
+    std::cout << "  output_root_file=" << options.outputRootFile << '\n';
+    std::cout << "  output_plot_file=" << options.outputPlotFile << '\n';
   }
+
+  timingHistogram.SetLineColor(kBlue + 1);
+  timingHistogram.SetLineWidth(3);
+  timingHistogram.SetMinimum(1.0);
+  fastHistogram.SetLineColor(kGreen + 2);
+  fastHistogram.SetLineWidth(2);
+  slowHistogram.SetLineColor(kRed + 1);
+  slowHistogram.SetLineWidth(2);
+
+  TCanvas canvas("c_timing_model_validation", "Timing Model Validation", 1100,
+                 800);
+  canvas.SetLogy();
+  timingHistogram.Draw("HIST");
+  fastHistogram.Draw("HIST SAME");
+  slowHistogram.Draw("HIST SAME");
+
+  TLegend legend(0.54, 0.72, 0.88, 0.88);
+  legend.AddEntry(&timingHistogram, "Total timing model", "l");
+  legend.AddEntry(&fastHistogram, "Fast component samples", "l");
+  legend.AddEntry(&slowHistogram, "Slow component samples", "l");
+  legend.Draw();
+
+  TLatex label;
+  label.SetNDC(true);
+  label.SetTextSize(0.031);
+  label.DrawLatex(0.54, 0.64, Form("Mean = %.3f ns", meanNs));
+  label.DrawLatex(0.54, 0.60, Form("Mode = %.3f ns", modeNs));
+  label.DrawLatex(0.54, 0.56, Form("Sigma = %.3f ns", sigmaNs));
+  label.DrawLatex(0.54, 0.52, Form("FWHM = %.3f ns", fwhmNs));
+  label.DrawLatex(0.54, 0.48, Form("Rise 0.1-0.9 = %.3f ns", rise10to90Ns));
+  label.DrawLatex(0.54, 0.44, Form("Fall proxy = %.3f ns", fall90to10Ns));
+
+  canvas.SaveAs(options.outputPlotFile.c_str());
+
+  TFile outputFile(options.outputRootFile.c_str(), "RECREATE");
+  timingHistogram.Write();
+  fastHistogram.Write();
+  slowHistogram.Write();
+  canvas.Write("timing_model_canvas");
+  outputFile.Close();
 
   bool success = true;
   if (options.targetFwhmNs >= 0.0) {
