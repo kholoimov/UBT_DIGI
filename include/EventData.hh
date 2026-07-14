@@ -19,8 +19,8 @@ class EventData {
   void AddScintillationPhotons(int count);
   void AddScintillationPhotonTime(double time);
   void AddPrimaryMuonTrackLength(double length);
-  void AddPmtIncidentPhoton(double time, double birthX, double birthY,
-                            double birthZ);
+  void AddPmtIncidentPhoton(double arrivalTime, double birthTime, double birthX,
+                            double birthY, double birthZ);
   void AddPmtPhotoelectron(double time);
 
   const std::string& GetPrimaryParticle() const;
@@ -37,7 +37,7 @@ class EventData {
   int GetPmtIncidentPhotons() const;
   int GetPmtPhotoelectrons() const;
   double GetFirstPmtHitTime() const;
-  const std::vector<std::array<double, 3>>& GetPmtIncidentPhotonBirthPositions()
+  const std::vector<std::array<double, 5>>& GetPmtIncidentPhotons()
       const;
   const std::vector<double>& GetPmtPhotoelectronTimes() const;
   bool HasPmtHit() const;
@@ -60,7 +60,7 @@ class EventData {
   int fPmtIncidentPhotons = 0;
   int fPmtPhotoelectrons = 0;
   double fFirstPmtHitTime = -1.0;
-  std::vector<std::array<double, 3>> fPmtIncidentPhotonBirthPositions;
+  std::vector<std::array<double, 5>> fPmtIncidentPhotons;
   std::vector<double> fPmtPhotoelectronTimes;
 };
 

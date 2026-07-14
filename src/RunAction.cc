@@ -184,6 +184,13 @@ RunAction::RunAction() {
   analysisManager->CreateNtupleDColumn("birth_x_mm");
   analysisManager->CreateNtupleDColumn("birth_y_mm");
   analysisManager->CreateNtupleDColumn("birth_z_mm");
+  analysisManager->CreateNtupleDColumn("birth_time_ns");
+  analysisManager->CreateNtupleDColumn("arrival_time_ns");
+  analysisManager->FinishNtuple();
+  analysisManager->CreateNtuple("scintillation_photon_birth_times",
+                                "Birth times of all scintillation photons");
+  analysisManager->CreateNtupleIColumn("event_id");
+  analysisManager->CreateNtupleDColumn("birth_time_ns");
   analysisManager->FinishNtuple();
 }
 
@@ -337,15 +344,20 @@ void RunAction::RecordDigi(const ScintillatorDigi& digi) {
   }
   analysisManager->AddNtupleRow();
 
-  for (const auto& position : EventData::Instance().GetPmtIncidentPhotonBirthPositions()) {
+  for (const auto& photon : EventData::Instance().GetPmtIncidentPhotons()) {
     analysisManager->FillNtupleIColumn(1, 0, digi.GetEventID());
-    analysisManager->FillNtupleDColumn(1, 1, position[0] / CLHEP::mm);
-    analysisManager->FillNtupleDColumn(1, 2, position[1] / CLHEP::mm);
-    analysisManager->FillNtupleDColumn(1, 3, position[2] / CLHEP::mm);
+    analysisManager->FillNtupleDColumn(1, 1, photon[0] / CLHEP::mm);
+    analysisManager->FillNtupleDColumn(1, 2, photon[1] / CLHEP::mm);
+    analysisManager->FillNtupleDColumn(1, 3, photon[2] / CLHEP::mm);
+    analysisManager->FillNtupleDColumn(1, 4, photon[3] / CLHEP::ns);
+    analysisManager->FillNtupleDColumn(1, 5, photon[4] / CLHEP::ns);
     analysisManager->AddNtupleRow(1);
   }
 
   for (const double time : EventData::Instance().GetScintillationPhotonTimes()) {
+    analysisManager->FillNtupleIColumn(2, 0, digi.GetEventID());
+    analysisManager->FillNtupleDColumn(2, 1, time / CLHEP::ns);
+    analysisManager->AddNtupleRow(2);
     analysisManager->FillH1(0, time / CLHEP::ns);
   }
 

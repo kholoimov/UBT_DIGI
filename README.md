@@ -173,6 +173,15 @@ event_id
 birth_x_mm
 birth_y_mm
 birth_z_mm
+birth_time_ns
+arrival_time_ns
+```
+
+It also contains a `scintillation_photon_birth_times` ntuple with one row per scintillation photon created in the scintillator:
+
+```text
+event_id
+birth_time_ns
 ```
 
 The ROOT file also contains these run-level timing histograms:
