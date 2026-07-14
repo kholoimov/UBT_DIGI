@@ -21,11 +21,11 @@ constexpr G4double kScintillatorHalfY = 20.0 * mm;
 constexpr G4double kScintillatorHalfZ = 5.0 * mm;
 constexpr G4double kSipmHalfX = 3.0 * mm;
 constexpr G4double kSipmHalfY = 3.0 * mm;
-constexpr G4double kRiseTime = 0.20 * ns;
-constexpr G4double kFastDecayTime = 0.60 * ns;
-constexpr G4double kSlowDecayTime = 1.80 * ns;
-constexpr G4double kFastComponentYield = 0.92;
-constexpr G4double kSlowComponentYield = 0.08;
+constexpr G4double kRiseTime = 0.85 * ns;
+constexpr G4double kFastDecayTime = 2.30 * ns;
+constexpr G4double kSlowDecayTime = 4.90 * ns;
+constexpr G4double kFastComponentYield = 0.85;
+constexpr G4double kSlowComponentYield = 0.15;
 constexpr G4double kWrapReflectivity = 0.96;
 constexpr G4double kWrapSigmaAlpha = 0.35;
 }  // namespace

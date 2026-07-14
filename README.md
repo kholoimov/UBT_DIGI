@@ -68,10 +68,10 @@ The sensor stack is centered on the `+z` face and has a `6 x 6 mm^2` active foot
 
 The scintillation timing model now uses:
 
-- rise time: `0.20 ns`
-- fast decay: `0.60 ns`
-- slow tail: `1.80 ns`
-- fast/slow yield split: `92% / 8%`
+- rise time: `0.85 ns`
+- fast decay: `2.30 ns`
+- slow tail: `4.90 ns`
+- fast/slow yield split: `85% / 15%`
 
 The scintillator also has a diffuse reflective wrapping model on its surfaces:
 
