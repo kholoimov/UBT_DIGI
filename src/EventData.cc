@@ -21,7 +21,7 @@ void EventData::Reset() {
   fPmtIncidentPhotons = 0;
   fPmtPhotoelectrons = 0;
   fFirstPmtHitTime = -1.0;
-  fPmtIncidentPhotons.clear();
+  fPmtIncidentPhotonRecords.clear();
   fPmtPhotoelectronTimes.clear();
 }
 
@@ -70,7 +70,7 @@ void EventData::AddPmtIncidentPhoton(double arrivalTime, double birthTime,
                                      double birthX, double birthY,
                                      double birthZ) {
   ++fPmtIncidentPhotons;
-  fPmtIncidentPhotons.push_back(
+  fPmtIncidentPhotonRecords.push_back(
       {birthX, birthY, birthZ, birthTime, arrivalTime});
   if (fFirstPmtHitTime < 0.0 || arrivalTime < fFirstPmtHitTime) {
     fFirstPmtHitTime = arrivalTime;
@@ -116,9 +116,9 @@ int EventData::GetPmtPhotoelectrons() const { return fPmtPhotoelectrons; }
 
 double EventData::GetFirstPmtHitTime() const { return fFirstPmtHitTime; }
 
-const std::vector<std::array<double, 5>>& EventData::GetPmtIncidentPhotons()
-    const {
-  return fPmtIncidentPhotons;
+const std::vector<std::array<double, 5>>&
+EventData::GetPmtIncidentPhotonRecords() const {
+  return fPmtIncidentPhotonRecords;
 }
 
 const std::vector<double>& EventData::GetPmtPhotoelectronTimes() const {

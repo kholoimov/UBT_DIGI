@@ -37,8 +37,7 @@ class EventData {
   int GetPmtIncidentPhotons() const;
   int GetPmtPhotoelectrons() const;
   double GetFirstPmtHitTime() const;
-  const std::vector<std::array<double, 5>>& GetPmtIncidentPhotons()
-      const;
+  const std::vector<std::array<double, 5>>& GetPmtIncidentPhotonRecords() const;
   const std::vector<double>& GetPmtPhotoelectronTimes() const;
   bool HasPmtHit() const;
 
@@ -60,7 +59,7 @@ class EventData {
   int fPmtIncidentPhotons = 0;
   int fPmtPhotoelectrons = 0;
   double fFirstPmtHitTime = -1.0;
-  std::vector<std::array<double, 5>> fPmtIncidentPhotons;
+  std::vector<std::array<double, 5>> fPmtIncidentPhotonRecords;
   std::vector<double> fPmtPhotoelectronTimes;
 };
 

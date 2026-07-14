@@ -344,7 +344,7 @@ void RunAction::RecordDigi(const ScintillatorDigi& digi) {
   }
   analysisManager->AddNtupleRow();
 
-  for (const auto& photon : EventData::Instance().GetPmtIncidentPhotons()) {
+  for (const auto& photon : EventData::Instance().GetPmtIncidentPhotonRecords()) {
     analysisManager->FillNtupleIColumn(1, 0, digi.GetEventID());
     analysisManager->FillNtupleDColumn(1, 1, photon[0] / CLHEP::mm);
     analysisManager->FillNtupleDColumn(1, 2, photon[1] / CLHEP::mm);

@@ -36,7 +36,7 @@ G4bool PMTSensitiveDetector::ProcessHits(G4Step* step, G4TouchableHistory*) {
   }
 
   const auto& vertexPosition = track->GetVertexPosition();
-  const double birthTime = track->GetVertexGlobalTime();
+  const double birthTime = track->GetGlobalTime() - track->GetLocalTime();
   EventData::Instance().AddPmtIncidentPhoton(
       track->GetGlobalTime(), birthTime, vertexPosition.x(),
       vertexPosition.y(), vertexPosition.z());
