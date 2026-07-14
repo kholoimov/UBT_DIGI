@@ -70,8 +70,10 @@ The scintillation timing model now uses:
 
 - rise time: `0.85 ns`
 - fast decay: `2.30 ns`
-- slow tail: `4.90 ns`
-- fast/slow yield split: `85% / 15%`
+- slow tail: `8.50 ns`
+- fast/slow yield split: `78% / 22%`
+
+These constants are defined centrally in [include/TimingModelParameters.hh](/Users/vkholoimov/Documents/SHIP/UBT_DIGI/include/TimingModelParameters.hh), so the detector setup and the compiled timing validator use the same values.
 
 The scintillator also has a diffuse reflective wrapping model on its surfaces:
 
@@ -242,6 +244,45 @@ root -l -q 'analysis/plot_event_observables.C("scintillator_digi.root","analysis
 ```
 
 The plots are written to `analysis/plots/` as both `.png` and `.pdf`.
+
+There is also a dedicated ROOT C++ validation macro at [analysis/validate_timing_distribution.C](/Users/vkholoimov/Documents/SHIP/UBT_DIGI/analysis/validate_timing_distribution.C) that:
+
+- reads the `scintillation_photon_birth_times` tree
+- builds the scintillation birth-time distribution on a log-scale canvas
+- fits it with a shifted-gamma model
+- prints fit mean, MPV, sigma, FWHM, rise time, and fall time
+- compares them against configurable target values
+
+Run it with:
+
+```bash
+root -l -q 'analysis/validate_timing_distribution.C("scintillator_digi.root","analysis/plots")'
+```
+
+If you want to validate only the scintillation timing model without running the full Geant4 simulation, use [analysis/simulate_timing_model.C](/Users/vkholoimov/Documents/SHIP/UBT_DIGI/analysis/simulate_timing_model.C). It:
+
+- samples the current rise-time plus fast/slow decay timing model directly
+- does not require a simulation ROOT file
+- builds a standalone log-scale timing plot
+- fits the generated distribution and prints mean, MPV, sigma, FWHM, rise time, and fall time
+
+Run it with:
+
+```bash
+root -l -q 'analysis/simulate_timing_model.C("analysis/plots")'
+```
+
+There is also a compiled timing-only validator registered with CTest. It uses the shared constants from [include/TimingModelParameters.hh](/Users/vkholoimov/Documents/SHIP/UBT_DIGI/include/TimingModelParameters.hh), samples the intrinsic timing model without running Geant4 transport, and prints timing metrics to the terminal:
+
+```bash
+ctest -R timing_model_validation --output-on-failure
+```
+
+The executable can also be run directly with optional numeric targets:
+
+```bash
+./build/ubt_timing_model_validation --samples 500000 --target-fwhm-ns 2.8 --tolerance-fwhm-ns 0.5
+```
 
 ## Muon energy sampling
 

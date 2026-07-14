@@ -4,6 +4,8 @@ project(UBTScintillatorDigi LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+enable_testing()
+
 find_package(Geant4 REQUIRED ui_all vis_all)
 
 include(${Geant4_USE_FILE})
@@ -21,3 +23,12 @@ file(COPY ${macro_files} DESTINATION ${PROJECT_BINARY_DIR}/macros)
 file(COPY ${PROJECT_SOURCE_DIR}/README.md DESTINATION ${PROJECT_BINARY_DIR})
 
 install(TARGETS ubt_scintillator DESTINATION bin)
+
+add_executable(ubt_timing_model_validation tests/validate_timing_model.cc)
+target_include_directories(ubt_timing_model_validation PRIVATE
+                           ${PROJECT_SOURCE_DIR}/include)
+
+add_test(
+  NAME timing_model_validation
+  COMMAND ubt_timing_model_validation
+          --samples 200000)

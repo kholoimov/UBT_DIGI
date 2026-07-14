@@ -2,6 +2,7 @@
 
 #include "PMTSensitiveDetector.hh"
 #include "ScintillatorSensitiveDetector.hh"
+#include "TimingModelParameters.hh"
 
 #include "G4Box.hh"
 #include "G4LogicalBorderSurface.hh"
@@ -21,11 +22,6 @@ constexpr G4double kScintillatorHalfY = 20.0 * mm;
 constexpr G4double kScintillatorHalfZ = 5.0 * mm;
 constexpr G4double kSipmHalfX = 3.0 * mm;
 constexpr G4double kSipmHalfY = 3.0 * mm;
-constexpr G4double kRiseTime = 0.85 * ns;
-constexpr G4double kFastDecayTime = 2.30 * ns;
-constexpr G4double kSlowDecayTime = 4.90 * ns;
-constexpr G4double kFastComponentYield = 0.85;
-constexpr G4double kSlowComponentYield = 0.15;
 constexpr G4double kWrapReflectivity = 0.96;
 constexpr G4double kWrapSigmaAlpha = 0.35;
 }  // namespace
@@ -80,12 +76,18 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
                    nEntries);
   mpt->AddConstProperty("SCINTILLATIONYIELD", 10000.0 / MeV);
   mpt->AddConstProperty("RESOLUTIONSCALE", 1.0);
-  mpt->AddConstProperty("SCINTILLATIONTIMECONSTANT1", kFastDecayTime);
-  mpt->AddConstProperty("SCINTILLATIONTIMECONSTANT2", kSlowDecayTime);
-  mpt->AddConstProperty("SCINTILLATIONRISETIME1", kRiseTime);
-  mpt->AddConstProperty("SCINTILLATIONRISETIME2", kRiseTime);
-  mpt->AddConstProperty("SCINTILLATIONYIELD1", kFastComponentYield);
-  mpt->AddConstProperty("SCINTILLATIONYIELD2", kSlowComponentYield);
+  mpt->AddConstProperty("SCINTILLATIONTIMECONSTANT1",
+                        TimingModelParameters::kFastDecayTimeNs * ns);
+  mpt->AddConstProperty("SCINTILLATIONTIMECONSTANT2",
+                        TimingModelParameters::kSlowDecayTimeNs * ns);
+  mpt->AddConstProperty("SCINTILLATIONRISETIME1",
+                        TimingModelParameters::kRiseTimeNs * ns);
+  mpt->AddConstProperty("SCINTILLATIONRISETIME2",
+                        TimingModelParameters::kRiseTimeNs * ns);
+  mpt->AddConstProperty("SCINTILLATIONYIELD1",
+                        TimingModelParameters::kFastComponentYield);
+  mpt->AddConstProperty("SCINTILLATIONYIELD2",
+                        TimingModelParameters::kSlowComponentYield);
 
   scintillator->SetMaterialPropertiesTable(mpt);
 
