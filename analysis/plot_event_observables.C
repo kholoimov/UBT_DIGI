@@ -23,7 +23,7 @@ constexpr std::array<int, 7> kOverlayIndices = {1, 5, 10, 20, 50, 100, 200};
 
 void ConfigureStyle() {
   gROOT->SetBatch(kTRUE);
-  gStyle->SetOptStat(0);
+  // gStyle->SetOptStat(0);
   gStyle->SetTitleFontSize(0.04);
   gStyle->SetPadLeftMargin(0.12);
   gStyle->SetPadRightMargin(0.14);
@@ -37,6 +37,42 @@ void SaveCanvas(TCanvas& canvas, const TString& outputDir,
 }
 
 }  // namespace
+
+// Normalized shifted-Gamma density
+double gammaComponent(double x, double area,
+                      double x0, double k, double theta)
+{
+    const double z = x - x0;
+
+    if (z <= 0.0 || area < 0.0 || k <= 0.0 || theta <= 0.0)
+        return 0.0;
+
+    const double logPdf =
+          (k - 1.0) * TMath::Log(z)
+        - z / theta
+        - TMath::LnGamma(k)
+        - k * TMath::Log(theta);
+
+    return area * TMath::Exp(logPdf);
+}
+
+// par[0] = area of narrow peak
+// par[1] = common threshold x0
+// par[2] = shape k1
+// par[3] = scale theta1
+// par[4] = area of broad tail
+// par[5] = shape k2
+// par[6] = scale theta2
+double doubleShiftedGamma(double *x, double *par)
+{
+    const double peak =
+        gammaComponent(x[0], par[0], par[1], par[2], par[3]);
+
+    const double tail =
+        gammaComponent(x[0], par[4], par[1], par[5], par[6]);
+
+    return peak + tail;
+}
 
 void plot_event_observables(
     const char* inputFile = "scintillator_digi.root",
@@ -63,6 +99,7 @@ void plot_event_observables(
   int pmtIncidentPhotons = 0;
   double photoelectrons = 0.0;
   int thresholdScanPe = -1;
+  double pmtChargePC = 0;
   double thresholdScanSigmaNs = -1.0;
   std::array<double, kMaxArrivalIndices> arrivalTimesNs = {};
 
@@ -71,6 +108,7 @@ void plot_event_observables(
   events->SetBranchAddress("primary_energy_mev", &primaryEnergyMeV);
   events->SetBranchAddress("scintillation_photons", &scintillationPhotons);
   events->SetBranchAddress("pmt_incident_photons", &pmtIncidentPhotons);
+  events->SetBranchAddress("pmt_charge_pc", &pmtChargePC);
   events->SetBranchAddress("photoelectrons", &photoelectrons);
   events->SetBranchAddress("threshold_scan_pe", &thresholdScanPe);
   events->SetBranchAddress("threshold_scan_sigma_ns", &thresholdScanSigmaNs);
@@ -101,6 +139,12 @@ void plot_event_observables(
   auto peVsPhotonsProfile = std::make_unique<TProfile>(
       "photoelectrons_vs_scintillation_photons_profile", "", 120, 15000.0, 40000.0);
 
+  auto pmt_charge_pc_histogram = std::make_unique<TH1D>(
+    "pmt_charge_pc_histogram",
+    "pmt_charge_pc_histogram",
+    100, 100, 600
+  );
+
   std::vector<double> thresholdValues;
   std::vector<double> sigmaValues;
   std::array<double, kMaxArrivalIndices> arrivalTimeSumsNs = {};
@@ -130,6 +174,8 @@ void plot_event_observables(
       peVsPhotons->Fill(scintillationPhotons, photoelectrons);
       peVsPhotonsProfile->Fill(scintillationPhotons, photoelectrons);
 
+      pmt_charge_pc_histogram->Fill(pmtChargePC);
+
       for (int j = 0; j < kMaxArrivalIndices; ++j) {
         if (arrivalTimesNs[j] >= 0.0) {
           arrivalTimeSumsNs[j] += arrivalTimesNs[j];
@@ -151,6 +197,146 @@ void plot_event_observables(
       thresholdValues.push_back(thresholdScanPe);
       sigmaValues.push_back(thresholdScanSigmaNs);
     }
+  }
+
+  {
+    TCanvas canvas("produced_photoelectrons", "produced_photoelectrons", 1100, 800);
+
+    int firstBin = -1;
+    int lastBin  = -1;
+
+    for (int bin = 1; bin <= pmt_charge_pc_histogram->GetNbinsX(); ++bin) {
+        if (pmt_charge_pc_histogram->GetBinContent(bin) > 0.0) {
+            firstBin = bin;
+            break;
+        }
+    }
+
+    for (int bin = pmt_charge_pc_histogram->GetNbinsX(); bin >= 1; --bin) {
+        if (pmt_charge_pc_histogram->GetBinContent(bin) > 0.0) {
+            lastBin = bin;
+            break;
+        }
+    }
+
+
+    double fitMin = pmt_charge_pc_histogram->GetXaxis()->GetBinLowEdge(firstBin);
+    double fitMax = pmt_charge_pc_histogram->GetXaxis()->GetBinUpEdge(lastBin);
+    const double binWidth = pmt_charge_pc_histogram->GetXaxis()->GetBinWidth(1);
+
+    /*
+      Multiplying by binWidth makes the function value correspond
+      approximately to the expected number of counts in a bin.
+    */
+    TF1 *fitFunction = new TF1(
+        "doubleGamma",
+        [binWidth](double *x, double *p) {
+            return binWidth * doubleShiftedGamma(x, p);
+        },
+        fitMin,
+        fitMax,
+        7
+    );
+
+    fitFunction->SetParNames(
+        "Peak area",
+        "Threshold x_{0}",
+        "Peak k",
+        "Peak #theta",
+        "Tail area",
+        "Tail k",
+        "Tail #theta"
+    );
+
+    const double totalCounts =
+        pmt_charge_pc_histogram->Integral(pmt_charge_pc_histogram->FindBin(fitMin),
+                       pmt_charge_pc_histogram->FindBin(fitMax));
+
+    /*
+      Starting values chosen from the displayed histogram.
+
+      Component 1:
+        narrow feature with mode near 190
+
+      Component 2:
+        broader feature producing the high-x tail
+
+      Gamma mode = x0 + (k - 1)*theta
+    */
+    fitFunction->SetParameters(
+        0.65 * totalCounts, // peak area
+        135.0,              // common x0
+        5.0,                // peak k
+        14.0,               // peak theta: mode ~191
+        0.35 * totalCounts, // tail area
+        2.0,                // tail k
+        75.0                 // tail theta
+    );
+
+    fitFunction->SetParLimits(0, 0.0, 2.0 * totalCounts);
+    fitFunction->SetParLimits(1, 125.0, 150.0);
+
+    fitFunction->SetParLimits(2, 1.01, 30.0);
+    fitFunction->SetParLimits(3, 1.0, 50.0);
+
+    fitFunction->SetParLimits(4, 0.0, 2.0 * totalCounts);
+    fitFunction->SetParLimits(5, 1.01, 10.0);
+    fitFunction->SetParLimits(6, 10.0, 300.0);
+
+    /*
+      R = use specified fit range
+      L = binned Poisson likelihood
+      S = return full fit result
+      0 = do not draw until explicitly requested
+    */
+    TFitResultPtr result = pmt_charge_pc_histogram->Fit(
+        fitFunction,
+        "RLS0"
+    );
+
+    
+    pmt_charge_pc_histogram->Draw("HIST");
+    pmt_charge_pc_histogram->SetStats(1);
+    fitFunction->Draw("SAME");
+
+    const double mostProbableValue =
+        fitFunction->GetMaximumX(fitMin, fitMax);
+
+    const double fittedMaximum =
+        fitFunction->Eval(mostProbableValue);
+
+        const double lineTop =
+        TMath::Max(pmt_charge_pc_histogram->GetMaximum(), fittedMaximum) * 1.05;
+
+    TLine *modeLine = new TLine(
+        mostProbableValue,
+        0.0,
+        mostProbableValue,
+        lineTop
+    );
+
+    modeLine->SetLineColor(kGreen + 2);
+    modeLine->SetLineWidth(3);
+    modeLine->SetLineStyle(2);
+    modeLine->Draw("SAME");
+
+    /*
+     * Add a label next to the line.
+     */
+    TLatex *modeLabel = new TLatex(
+        mostProbableValue + 2.0 * binWidth,
+        0.90 * lineTop,
+        Form("MPV = %.2f", mostProbableValue)
+    );
+
+    modeLabel->SetTextColor(kGreen + 2);
+    modeLabel->SetTextSize(0.035);
+    modeLabel->Draw("SAME");
+
+
+
+
+    SaveCanvas(canvas, outputDir, "photoelectrons");
   }
 
   {

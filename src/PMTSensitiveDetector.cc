@@ -11,7 +11,7 @@
 
 namespace {
 constexpr double kLightCollectionEfficiency = 0.30;
-constexpr double kPhotonDetectionEfficiency = 0.30;
+constexpr double kPhotonDetectionEfficiency = 0.64;
 }
 
 PMTSensitiveDetector::PMTSensitiveDetector(const G4String& name)
