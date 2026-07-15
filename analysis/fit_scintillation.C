@@ -1512,7 +1512,8 @@ std::vector<Double_t> hist_dnl_inl__1_vect0{
     hist_dnl_inl__1->SetMarkerSize(0.5);
     hist_dnl_inl__1->SetMarkerColor(kBlack);
     hist_dnl_inl__1->SetLineColor(kBlack);
-    hist_dnl_inl__1->SetMinimum(1.0);
+    hist_dnl_inl__1->SetMinimum(10.0);
+    hist_dnl_inl__1->SetMaximum(1e5);
     hist_dnl_inl__1->Draw("E");
 
     fitFunction->SetLineColor(kRed + 1);
@@ -1558,12 +1559,16 @@ std::vector<Double_t> hist_dnl_inl__1_vect0{
     TLatex label;
     label.SetNDC(true);
     label.SetTextSize(0.03);
-    label.DrawLatex(0.14, 0.88, Form("t_{0} = %.3f ns", fitFunction->GetParameter(0)));
-    label.DrawLatex(0.14, 0.84, Form("#tau_{rise} = %.3f ns", tauRise));
-    label.DrawLatex(0.14, 0.80, Form("#tau_{fast} = %.3f ns", tauFast));
-    label.DrawLatex(0.14, 0.76, Form("#tau_{slow} = %.3f ns", tauSlow));
-    label.DrawLatex(0.14, 0.72, Form("fast yield = %.3f", fastFraction));
-    label.DrawLatex(0.14, 0.68, Form("slow yield = %.3f", slowFraction));
+
+    const auto x_label_position = 0.3;
+    const auto y_label_top_position = 0.85;
+    const auto y_label_step_value = 0.04;
+    label.DrawLatex(x_label_position, y_label_top_position, Form("t_{0} = %.3f ns", fitFunction->GetParameter(0)));
+    label.DrawLatex(x_label_position, y_label_top_position - y_label_step_value * 1, Form("#tau_{rise} = %.3f ns", tauRise));
+    label.DrawLatex(x_label_position, y_label_top_position - y_label_step_value * 2, Form("#tau_{fast} = %.3f ns", tauFast));
+    label.DrawLatex(x_label_position, y_label_top_position - y_label_step_value * 3, Form("#tau_{slow} = %.3f ns", tauSlow));
+    label.DrawLatex(x_label_position, y_label_top_position - y_label_step_value * 4, Form("fast yield = %.3f", fastFraction));
+    label.DrawLatex(x_label_position, y_label_top_position - y_label_step_value * 5, Form("slow yield = %.3f", slowFraction));
 
     canvas->SaveAs("analysis/scintillation_fit.pdf");
 
