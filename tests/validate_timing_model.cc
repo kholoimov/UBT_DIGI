@@ -196,8 +196,13 @@ int main(int argc, char** argv) {
   constexpr double slowDecayNs = TimingModelParameters::kSlowDecayTimeNs;
   constexpr double fastWeight = TimingModelParameters::kFastComponentYield;
   constexpr double slowWeight = TimingModelParameters::kSlowComponentYield;
+  constexpr double validationTimeOffsetNs =
+      TimingModelParameters::kValidationTimeOffsetNs;
+  constexpr double backgroundCountsPerBin =
+      TimingModelParameters::kValidationBackgroundCountsPerBin;
   constexpr double timeMaxNs = 80.0;
   constexpr double binWidthNs = 0.1;
+  constexpr double displayedTimeMaxNs = timeMaxNs + validationTimeOffsetNs;
 
   std::mt19937_64 rng(12345);
   std::uniform_real_distribution<double> componentDist(
@@ -207,26 +212,34 @@ int main(int argc, char** argv) {
   samples.reserve(static_cast<std::size_t>(options.samples));
   TH1D timingHistogram("timing_model_distribution",
                        "Compiled Timing-Model Validation;time [ns];counts", 800,
-                       0.0, timeMaxNs);
+                       validationTimeOffsetNs, displayedTimeMaxNs);
   TH1D fastHistogram("timing_model_fast_component",
                      "Compiled Timing-Model Validation;time [ns];counts", 800,
-                     0.0, timeMaxNs);
+                     validationTimeOffsetNs, displayedTimeMaxNs);
   TH1D slowHistogram("timing_model_slow_component",
                      "Compiled Timing-Model Validation;time [ns];counts", 800,
-                     0.0, timeMaxNs);
+                     validationTimeOffsetNs, displayedTimeMaxNs);
 
   for (int i = 0; i < options.samples; ++i) {
     const bool useFast = componentDist(rng) < fastWeight;
     const double sample =
         useFast ? SampleComponent(rng, riseNs, fastDecayNs, timeMaxNs)
                 : SampleComponent(rng, riseNs, slowDecayNs, timeMaxNs);
+    const double shiftedSample = sample + validationTimeOffsetNs;
     samples.push_back(sample);
-    timingHistogram.Fill(sample);
+    timingHistogram.Fill(shiftedSample);
     if (useFast) {
-      fastHistogram.Fill(sample);
+      fastHistogram.Fill(shiftedSample);
     } else {
-      slowHistogram.Fill(sample);
+      slowHistogram.Fill(shiftedSample);
     }
+  }
+
+  for (int bin = 1; bin <= timingHistogram.GetNbinsX(); ++bin) {
+    timingHistogram.SetBinContent(
+        bin, timingHistogram.GetBinContent(bin) + backgroundCountsPerBin);
+    timingHistogram.SetBinError(
+        bin, std::sqrt(timingHistogram.GetBinContent(bin)));
   }
 
   std::sort(samples.begin(), samples.end());
@@ -246,6 +259,8 @@ int main(int argc, char** argv) {
       QuantileFromSorted(samples, 0.90) - QuantileFromSorted(samples, 0.10);
   const double fall90to10Ns =
       QuantileFromSorted(samples, 0.95) - QuantileFromSorted(samples, 0.50);
+  const double displayedMeanNs = meanNs + validationTimeOffsetNs;
+  const double displayedModeNs = modeNs + validationTimeOffsetNs;
 
   if (options.verbose) {
     std::cout << "Timing-only validation using shared framework constants\n";
@@ -254,9 +269,13 @@ int main(int argc, char** argv) {
               << " weight=" << fastWeight << '\n';
     std::cout << "  slow_decay_ns=" << slowDecayNs
               << " weight=" << slowWeight << '\n';
+    std::cout << "  validation_time_offset_ns=" << validationTimeOffsetNs
+              << '\n';
+    std::cout << "  background_counts_per_bin=" << backgroundCountsPerBin
+              << '\n';
     std::cout << "  samples=" << options.samples << '\n';
-    std::cout << "  mean_ns=" << meanNs << '\n';
-    std::cout << "  mode_ns=" << modeNs << '\n';
+    std::cout << "  mean_ns=" << displayedMeanNs << '\n';
+    std::cout << "  mode_ns=" << displayedModeNs << '\n';
     std::cout << "  sigma_ns=" << sigmaNs << '\n';
     std::cout << "  fwhm_ns=" << fwhmNs << '\n';
     std::cout << "  rise10to90_ns=" << rise10to90Ns << '\n';
@@ -289,8 +308,8 @@ int main(int argc, char** argv) {
   TLatex label;
   label.SetNDC(true);
   label.SetTextSize(0.031);
-  label.DrawLatex(0.54, 0.64, Form("Mean = %.3f ns", meanNs));
-  label.DrawLatex(0.54, 0.60, Form("Mode = %.3f ns", modeNs));
+  label.DrawLatex(0.54, 0.64, Form("Mean = %.3f ns", displayedMeanNs));
+  label.DrawLatex(0.54, 0.60, Form("Mode = %.3f ns", displayedModeNs));
   label.DrawLatex(0.54, 0.56, Form("Sigma = %.3f ns", sigmaNs));
   label.DrawLatex(0.54, 0.52, Form("FWHM = %.3f ns", fwhmNs));
   label.DrawLatex(0.54, 0.48, Form("Rise 0.1-0.9 = %.3f ns", rise10to90Ns));
