@@ -11,7 +11,10 @@
 #include <TH1F.h>
 #include <TF1.h>
 #include <TCanvas.h>
+#include <TFile.h>
+#include <TFitResultPtr.h>
 #include <TLegend.h>
+#include <TLatex.h>
 #include <TMath.h>
 #include <TStyle.h>
 
@@ -30,13 +33,14 @@
 // [2] = tau_fast        : fast decay time
 // [3] = N_slow          : integral/yield of slow component
 // [4] = tau_slow        : slow decay time
-// [5] = background      : constant background per bin
+// [5] = tau_rise        : common rise time
+// [6] = background      : constant background per bin
 //
 // The exponential components are normalized so that N_fast and
 // N_slow approximately represent the total numbers of counts in
 // each component.
 // ------------------------------------------------------------
-Double_t ScintillationTimeModel(Double_t* x, Double_t* p)
+Double_t ScintillationCommonRise(Double_t* x, Double_t* p)
 {
     // p[0] = t0
     // p[1] = Nfast, integrated fast-component counts
@@ -80,36 +84,62 @@ Double_t ScintillationTimeModel(Double_t* x, Double_t* p)
     return background + fast + slow;
 }
 
-// Individual fast component, used only for drawing.
-Double_t FastComponent(Double_t *x, Double_t *par)
+// ============================================================
+// Fast component only
+// ============================================================
+Double_t FastWithCommonRise(Double_t *x, Double_t *par)
 {
-    const Double_t t = x[0];
+    const Double_t t       = x[0];
+    const Double_t t0      = par[0];
+    const Double_t nFast   = par[1];
+    const Double_t tauFast = par[2];
+    const Double_t tauRise = par[5];
 
-    if (t < par[0] || par[2] <= 0.0) {
+    if (t < t0 ||
+        tauRise <= 0.0 ||
+        tauFast <= tauRise) {
         return 0.0;
     }
 
-    const Double_t dt = t - par[0];
-    return par[1] / par[2] * TMath::Exp(-dt / par[2]);
+    const Double_t dt = t - t0;
+
+    return nFast / (tauFast - tauRise) *
+           (
+               TMath::Exp(-dt / tauFast) -
+               TMath::Exp(-dt / tauRise)
+           );
 }
 
-// Individual slow component, used only for drawing.
-Double_t SlowComponent(Double_t *x, Double_t *par)
+// ============================================================
+// Slow component only
+// ============================================================
+Double_t SlowWithCommonRise(Double_t *x, Double_t *par)
 {
-    const Double_t t = x[0];
+    const Double_t t       = x[0];
+    const Double_t t0      = par[0];
+    const Double_t nSlow   = par[3];
+    const Double_t tauSlow = par[4];
+    const Double_t tauRise = par[5];
 
-    if (t < par[0] || par[4] <= 0.0) {
+    if (t < t0 ||
+        tauRise <= 0.0 ||
+        tauSlow <= tauRise) {
         return 0.0;
     }
 
-    const Double_t dt = t - par[0];
-    return par[3] / par[4] * TMath::Exp(-dt / par[4]);
+    const Double_t dt = t - t0;
+
+    return nSlow / (tauSlow - tauRise) *
+           (
+               TMath::Exp(-dt / tauSlow) -
+               TMath::Exp(-dt / tauRise)
+           );
 }
 
 void fit_scintillation()
 {
     gStyle->SetOptStat(0);
-    gStyle->SetOptFit(1111);
+    gStyle->SetOptFit(0);
 
     // --------------------------------------------------------
     // Histogram definition
@@ -119,8 +149,8 @@ void fit_scintillation()
     const Double_t xMaximum = 200.0;
 
     TH1F *hist_dnl_inl__1 = new TH1F(
-        "hist_dnl_inl",
-        "Time spectrum;Time;Counts",
+        "time_spectrum",
+        "Scintillation Time Spectrum;Time [ns];Counts",
         numberOfBins,
         xMinimum,
         xMaximum
@@ -1334,7 +1364,6 @@ std::vector<Double_t> hist_dnl_inl__1_vect0{
     const Int_t maximumBin = hist_dnl_inl__1->GetMaximumBin();
     const Double_t peakTime = hist_dnl_inl__1->GetBinCenter(maximumBin);
     const Double_t peakHeight = hist_dnl_inl__1->GetBinContent(maximumBin);
-    const Double_t binWidth = hist_dnl_inl__1->GetBinWidth(1);
 
     // Estimate background from the first and last 5% of the spectrum.
     const Int_t sidebandBins =
@@ -1363,18 +1392,35 @@ std::vector<Double_t> hist_dnl_inl__1_vect0{
     const Double_t totalCounts =
         std::max(1.0, hist_dnl_inl__1->Integral());
 
+    const Double_t onsetThreshold =
+        backgroundEstimate + 0.05 * std::max(0.0, peakHeight - backgroundEstimate);
+    Double_t onsetTime = peakTime - 2.0;
+    for (Int_t bin = 1; bin <= maximumBin; ++bin) {
+        if (hist_dnl_inl__1->GetBinContent(bin) > onsetThreshold) {
+            onsetTime = hist_dnl_inl__1->GetBinCenter(bin);
+            break;
+        }
+    }
+
     // --------------------------------------------------------
     // Select the fitting interval.
     //
     // Adjust these values to exclude pre-trigger structure or
     // regions unrelated to the scintillation pulse.
     // --------------------------------------------------------
-    const Double_t fitMinimum = std::max(xMinimum, peakTime);
+    const Double_t fitMinimum = std::max(xMinimum, onsetTime - 0.8);
     const Double_t fitMaximum = xMaximum;
+
+    const Double_t fastYieldInit =
+        std::max(0.05 * totalCounts, peakHeight * 2.0);
+    const Double_t slowYieldInit =
+        std::max(0.01 * totalCounts, peakHeight * 12.0);
+    const Double_t backgroundUpper =
+        std::max(200.0, 3.0 * backgroundEstimate);
 
     TF1* fitFunction = new TF1(
         "fitFunction",
-        ScintillationTimeModel,
+        ScintillationCommonRise,
         fitMinimum,
         fitMaximum,
         7
@@ -1391,36 +1437,44 @@ std::vector<Double_t> hist_dnl_inl__1_vect0{
     );
 
     fitFunction->SetParameters(
-        116.0,               // t0
-        0.8 * totalCounts,   // Nfast
-        3.0,                 // tauFast
-        0.2 * totalCounts,   // Nslow
+        onsetTime,           // t0
+        fastYieldInit,       // Nfast
+        2.3,                 // tauFast
+        slowYieldInit,       // Nslow
         20.0,                // tauSlow
-        0.5,                 // tauRise
+        0.18,                // tauRise
         backgroundEstimate
     );
 
-    fitFunction->SetParLimits(0, 110.0, 120.0);
+    fitFunction->SetParLimits(0, onsetTime - 0.8, onsetTime + 0.8);
 
-    fitFunction->SetParLimits(1, 0.0, 10.0 * totalCounts);
-    fitFunction->SetParLimits(2, 0.1, 30.0);
+    fitFunction->SetParLimits(1, 0.0, 100.0 * peakHeight);
+    fitFunction->SetParLimits(2, 0.8, 8.0);
 
-    fitFunction->SetParLimits(3, 0.0, 10.0 * totalCounts);
-    fitFunction->SetParLimits(4, 1.0, 300.0);
+    fitFunction->SetParLimits(3, 0.0, 100.0 * peakHeight);
+    fitFunction->SetParLimits(4, 6.0, 80.0);
 
-    fitFunction->SetParLimits(5, 0.01, 5.0);
-    fitFunction->SetParLimits(6, 0.0, 200.0);
+    fitFunction->SetParLimits(5, 0.02, 0.7);
+    fitFunction->SetParLimits(6, std::max(0.0, 0.5 * backgroundEstimate),
+                              backgroundUpper);
 
-    // L: Poisson likelihood, suitable for binned count data.
     // R: use the TF1 fitting range.
     // S: return TFitResultPtr.
     // I: integrate the function over each bin.
+    // M: improve minimization for a multi-parameter model.
+    //
+    // A chi2 fit is more stable here because the imported spectrum has
+    // corrected floating-bin contents rather than raw integer Poisson counts.
+    hist_dnl_inl__1->Fit(fitFunction, "QRSIM");
     TFitResultPtr fitResult =
-        hist_dnl_inl__1->Fit(fitFunction, "LRSI");
+        hist_dnl_inl__1->Fit(fitFunction, "RSIM");
 
-    if (!fitResult.Get()) {
+    if (!fitResult.Get() || fitResult->Status() != 0) {
         std::cerr << "The fit did not return a valid result." << std::endl;
-        return;
+        if (fitResult.Get()) {
+            std::cerr << "Fit status code: " << fitResult->Status()
+                      << std::endl;
+        }
     }
 
     // --------------------------------------------------------
@@ -1433,8 +1487,9 @@ std::vector<Double_t> hist_dnl_inl__1_vect0{
     const double nFast = fitFunction->GetParameter(1);
     const double nSlow = fitFunction->GetParameter(3);
 
-    const double fastFraction = nFast / (nFast + nSlow);
-    const double slowFraction = nSlow / (nFast + nSlow);
+    const double totalYield = std::max(1e-12, nFast + nSlow);
+    const double fastFraction = nFast / totalYield;
+    const double slowFraction = nSlow / totalYield;
 
     std::cout << "kFastDecayTimeNs = " << tauFast << ";\n";
     std::cout << "kSlowDecayTimeNs = " << tauSlow << ";\n";
@@ -1443,29 +1498,78 @@ std::vector<Double_t> hist_dnl_inl__1_vect0{
     std::cout << "kSlowComponentYield = " << slowFraction << ";\n";
 
     // --------------------------------------------------------
-    // Draw total fit and separate components
+    // Draw and save the final fit plot
     // --------------------------------------------------------
     TCanvas *canvas = new TCanvas(
-        "canvas",
+        "scintillation_fit_canvas",
         "Scintillation fit",
         1200,
         800
     );
+    canvas->SetLogy();
 
     hist_dnl_inl__1->SetMarkerStyle(20);
     hist_dnl_inl__1->SetMarkerSize(0.5);
+    hist_dnl_inl__1->SetMarkerColor(kBlack);
+    hist_dnl_inl__1->SetLineColor(kBlack);
+    hist_dnl_inl__1->SetMinimum(1.0);
     hist_dnl_inl__1->Draw("E");
 
+    fitFunction->SetLineColor(kRed + 1);
+    fitFunction->SetLineStyle(1);
     fitFunction->SetLineWidth(3);
-    fitFunction->Draw("same");
+    fitFunction->SetNpx(2000);
+    fitFunction->Draw("SAME");
 
-    // Total fit.
-fitFunction->SetLineColor(kRed + 1);
-fitFunction->SetLineStyle(1);
-fitFunction->SetLineWidth(3);
-fitFunction->SetNpx(2000);
-fitFunction->Draw("same");
+    TF1 *fastComponent = new TF1(
+        "fastComponent",
+        FastWithCommonRise,
+        fitMinimum,
+        fitMaximum,
+        7
+    );
+    TF1 *slowComponent = new TF1(
+        "slowComponent",
+        SlowWithCommonRise,
+        fitMinimum,
+        fitMaximum,
+        7
+    );
+    fastComponent->SetParameters(fitFunction->GetParameters());
+    slowComponent->SetParameters(fitFunction->GetParameters());
+    fastComponent->SetLineColor(kBlue + 1);
+    fastComponent->SetLineStyle(2);
+    fastComponent->SetLineWidth(2);
+    slowComponent->SetLineColor(kGreen + 2);
+    slowComponent->SetLineStyle(2);
+    slowComponent->SetLineWidth(2);
+    fastComponent->Draw("SAME");
+    slowComponent->Draw("SAME");
 
+    TLegend *legend = new TLegend(0.55, 0.72, 0.88, 0.88);
+    legend->SetBorderSize(0);
+    legend->SetFillStyle(0);
+    legend->AddEntry(hist_dnl_inl__1, "Input spectrum", "lep");
+    legend->AddEntry(fitFunction, "Total fit", "l");
+    legend->AddEntry(fastComponent, "Fast component", "l");
+    legend->AddEntry(slowComponent, "Slow component", "l");
+    legend->Draw();
 
+    TLatex label;
+    label.SetNDC(true);
+    label.SetTextSize(0.03);
+    label.DrawLatex(0.14, 0.88, Form("t_{0} = %.3f ns", fitFunction->GetParameter(0)));
+    label.DrawLatex(0.14, 0.84, Form("#tau_{rise} = %.3f ns", tauRise));
+    label.DrawLatex(0.14, 0.80, Form("#tau_{fast} = %.3f ns", tauFast));
+    label.DrawLatex(0.14, 0.76, Form("#tau_{slow} = %.3f ns", tauSlow));
+    label.DrawLatex(0.14, 0.72, Form("fast yield = %.3f", fastFraction));
+    label.DrawLatex(0.14, 0.68, Form("slow yield = %.3f", slowFraction));
 
+    canvas->SaveAs("analysis/scintillation_fit.pdf");
+
+    TFile outputFile("analysis/scintillation_fit.root", "RECREATE");
+    hist_dnl_inl__1->Write();
+    fitFunction->Write("scintillation_fit_function");
+    canvas->Write();
+    outputFile.Close();
 }
