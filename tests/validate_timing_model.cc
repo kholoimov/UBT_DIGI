@@ -202,7 +202,7 @@ int main(int argc, char** argv) {
       TimingModelParameters::kValidationBackgroundCountsPerBin;
   constexpr double timeMaxNs = 80.0;
   constexpr double binWidthNs = 0.1;
-  constexpr double displayedTimeMaxNs = timeMaxNs + validationTimeOffsetNs;
+  constexpr double displayedTimeMaxNs = 90;
 
   std::mt19937_64 rng(12345);
   std::uniform_real_distribution<double> componentDist(
@@ -210,15 +210,16 @@ int main(int argc, char** argv) {
 
   std::vector<double> samples;
   samples.reserve(static_cast<std::size_t>(options.samples));
+  const double first_bin = 10.0;
   TH1D timingHistogram("timing_model_distribution",
                        "Compiled Timing-Model Validation;time [ns];counts", 800,
-                       validationTimeOffsetNs, displayedTimeMaxNs);
+                       first_bin, displayedTimeMaxNs);
   TH1D fastHistogram("timing_model_fast_component",
                      "Compiled Timing-Model Validation;time [ns];counts", 800,
-                     validationTimeOffsetNs, displayedTimeMaxNs);
+                     first_bin, displayedTimeMaxNs);
   TH1D slowHistogram("timing_model_slow_component",
                      "Compiled Timing-Model Validation;time [ns];counts", 800,
-                     validationTimeOffsetNs, displayedTimeMaxNs);
+                     first_bin, displayedTimeMaxNs);
 
   for (int i = 0; i < options.samples; ++i) {
     const bool useFast = componentDist(rng) < fastWeight;
@@ -237,7 +238,7 @@ int main(int argc, char** argv) {
 
   for (int bin = 1; bin <= timingHistogram.GetNbinsX(); ++bin) {
     timingHistogram.SetBinContent(
-        bin, timingHistogram.GetBinContent(bin) + backgroundCountsPerBin);
+        bin, timingHistogram.GetBinContent(bin) + backgroundCountsPerBin + std::clamp(std::normal_distribution<double>(0.0, 20.0/3.0)(rng), -20.0, 20.0) );
     timingHistogram.SetBinError(
         bin, std::sqrt(timingHistogram.GetBinContent(bin)));
   }
@@ -286,7 +287,7 @@ int main(int argc, char** argv) {
 
   timingHistogram.SetLineColor(kBlue + 1);
   timingHistogram.SetLineWidth(3);
-  timingHistogram.SetMinimum(1.0);
+  timingHistogram.SetMinimum(9.0);
   fastHistogram.SetLineColor(kGreen + 2);
   fastHistogram.SetLineWidth(2);
   slowHistogram.SetLineColor(kRed + 1);
@@ -303,7 +304,7 @@ int main(int argc, char** argv) {
   legend.AddEntry(&timingHistogram, "Total timing model", "l");
   legend.AddEntry(&fastHistogram, "Fast component samples", "l");
   legend.AddEntry(&slowHistogram, "Slow component samples", "l");
-  legend.Draw();
+  // legend.Draw();
 
   TLatex label;
   label.SetNDC(true);
