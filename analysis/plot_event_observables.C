@@ -181,6 +181,14 @@ void plot_event_observables(
       "delta_arrival_time_pe100_minus_pe1_histogram",
       "Arrival-Time Difference PE 100 - PE 1;#Deltat = t_{100} - t_{1} [ns];counts",
       160, 0.0, 8.0);
+  auto deltaArrivalTimePe1MinusPe100Histogram = std::make_unique<TH1D>(
+      "delta_arrival_time_pe1_minus_pe100_histogram",
+      "Arrival-Time Comparison with PE 100;time [ns];counts",
+      240, -8.0, 8.0);
+  auto arrivalTimePe100Histogram = std::make_unique<TH1D>(
+      "arrival_time_pe100_histogram",
+      "Arrival-Time Comparison with PE 100;time [ns];counts",
+      240, -8.0, 8.0);
 
   std::vector<double> thresholdValues;
   std::vector<double> sigmaValues;
@@ -239,6 +247,8 @@ void plot_event_observables(
 
           if (kStoredArrivalPe[j] == 100) {
             deltaArrivalTimePe100MinusPe1Histogram->Fill(deltaArrivalTimeNs);
+            deltaArrivalTimePe1MinusPe100Histogram->Fill(-deltaArrivalTimeNs);
+            arrivalTimePe100Histogram->Fill(arrivalTimesNs[j]);
           }
         }
       }
@@ -681,6 +691,48 @@ void plot_event_observables(
     deltaArrivalTimePe100MinusPe1Histogram->Draw("HIST");
 
     SaveCanvas(canvas, outputDir, "delta_arrival_time_pe100_minus_pe1");
+  }
+
+  if (deltaArrivalTimePe1MinusPe100Histogram->GetEntries() > 0.0 ||
+      arrivalTimePe100Histogram->GetEntries() > 0.0) {
+    TCanvas canvas("c_arrival_time_pe1_minus_pe100_and_pe100",
+                   "Arrival Time Comparison with PE 100", 1000, 700);
+
+    if (deltaArrivalTimePe1MinusPe100Histogram->Integral() > 0.0) {
+      deltaArrivalTimePe1MinusPe100Histogram->Scale(
+          1.0 / deltaArrivalTimePe1MinusPe100Histogram->Integral("width"));
+    }
+    if (arrivalTimePe100Histogram->Integral() > 0.0) {
+      arrivalTimePe100Histogram->Scale(
+          1.0 / arrivalTimePe100Histogram->Integral("width"));
+    }
+
+    deltaArrivalTimePe1MinusPe100Histogram->SetLineColor(kBlue + 2);
+    deltaArrivalTimePe1MinusPe100Histogram->SetLineWidth(3);
+    arrivalTimePe100Histogram->SetLineColor(kRed + 1);
+    arrivalTimePe100Histogram->SetLineWidth(3);
+
+    const double maximum = std::max(
+        deltaArrivalTimePe1MinusPe100Histogram->GetMaximum(),
+        arrivalTimePe100Histogram->GetMaximum());
+    if (maximum > 0.0) {
+      deltaArrivalTimePe1MinusPe100Histogram->SetMaximum(maximum * 1.15);
+    }
+
+    deltaArrivalTimePe1MinusPe100Histogram->SetTitle(
+        "Arrival-Time Comparison with PE 100;time [ns];Normalized entries");
+    deltaArrivalTimePe1MinusPe100Histogram->Draw("HIST");
+    arrivalTimePe100Histogram->Draw("HIST SAME");
+
+    TLegend legend(0.55, 0.74, 0.88, 0.88);
+    legend.AddEntry(deltaArrivalTimePe1MinusPe100Histogram.get(),
+                    "t_{1} - t_{100}", "l");
+    legend.AddEntry(arrivalTimePe100Histogram.get(),
+                    "t_{100}", "l");
+    legend.Draw();
+
+    SaveCanvas(canvas, outputDir,
+               "arrival_time_pe1_minus_pe100_and_pe100");
   }
 
   {
