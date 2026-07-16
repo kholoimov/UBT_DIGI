@@ -176,13 +176,20 @@ void plot_event_observables(
   auto detectedPhotonArrivalTimeHistogram = std::make_unique<TH1D>(
       "detected_photon_arrival_time_histogram",
       "Scintillation and Detected-Photon Timing;time [ns];counts",
-      160, 0.0, 60.0);
+      160, 0.0, 8.0);
+  auto deltaArrivalTimePe100MinusPe1Histogram = std::make_unique<TH1D>(
+      "delta_arrival_time_pe100_minus_pe1_histogram",
+      "Arrival-Time Difference PE 100 - PE 1;#Deltat = t_{100} - t_{1} [ns];counts",
+      160, 0.0, 8.0);
 
   std::vector<double> thresholdValues;
   std::vector<double> sigmaValues;
   std::array<double, kStoredArrivalPe.size()> arrivalTimeSumsNs = {};
   std::array<double, kStoredArrivalPe.size()> arrivalTimeSqSumsNs = {};
   std::array<int, kStoredArrivalPe.size()> arrivalTimeCounts = {};
+  std::array<double, kStoredArrivalPe.size()> deltaArrivalTimeSumsNs = {};
+  std::array<double, kStoredArrivalPe.size()> deltaArrivalTimeSqSumsNs = {};
+  std::array<int, kStoredArrivalPe.size()> deltaArrivalTimeCounts = {};
   std::vector<std::unique_ptr<TH1D>> overlayHistograms;
   overlayHistograms.reserve(kOverlayIndices.size());
   for (int index : kOverlayIndices) {
@@ -215,6 +222,24 @@ void plot_event_observables(
           arrivalTimeSumsNs[j] += arrivalTimesNs[j];
           arrivalTimeSqSumsNs[j] += arrivalTimesNs[j] * arrivalTimesNs[j];
           ++arrivalTimeCounts[j];
+        }
+      }
+
+      const auto arrivalTimePe1 = arrivalTimesNs.front();
+      if (arrivalTimePe1 >= 0.0) {
+        for (std::size_t j = 1; j < kStoredArrivalPe.size(); ++j) {
+          if (arrivalTimesNs[j] < 0.0) {
+            continue;
+          }
+          const double deltaArrivalTimeNs = arrivalTimesNs[j] - arrivalTimePe1;
+          deltaArrivalTimeSumsNs[j] += deltaArrivalTimeNs;
+          deltaArrivalTimeSqSumsNs[j] +=
+              deltaArrivalTimeNs * deltaArrivalTimeNs;
+          ++deltaArrivalTimeCounts[j];
+
+          if (kStoredArrivalPe[j] == 100) {
+            deltaArrivalTimePe100MinusPe1Histogram->Fill(deltaArrivalTimeNs);
+          }
         }
       }
 
@@ -648,6 +673,16 @@ void plot_event_observables(
     SaveCanvas(canvas, outputDir, "arrival_time_overlays_selected_pe");
   }
 
+  if (deltaArrivalTimePe100MinusPe1Histogram->GetEntries() > 0.0) {
+    TCanvas canvas("c_delta_arrival_time_pe100_minus_pe1",
+                   "Arrival Time Difference PE 100 - PE 1", 1000, 700);
+    deltaArrivalTimePe100MinusPe1Histogram->SetLineColor(kBlue + 2);
+    deltaArrivalTimePe100MinusPe1Histogram->SetLineWidth(3);
+    deltaArrivalTimePe100MinusPe1Histogram->Draw("HIST");
+
+    SaveCanvas(canvas, outputDir, "delta_arrival_time_pe100_minus_pe1");
+  }
+
   {
     std::vector<double> arrivalIndices;
     std::vector<double> meanArrivalTimesNs;
@@ -676,6 +711,64 @@ void plot_event_observables(
       graph.Draw("ALP");
 
       SaveCanvas(canvas, outputDir, "mean_arrival_time_vs_pe_index");
+    }
+  }
+
+  {
+    std::vector<double> deltaArrivalIndices;
+    std::vector<double> meanDeltaArrivalTimesNs;
+    std::vector<double> sigmaDeltaArrivalTimesNs;
+    deltaArrivalIndices.reserve(kStoredArrivalPe.size() - 1);
+    meanDeltaArrivalTimesNs.reserve(kStoredArrivalPe.size() - 1);
+    sigmaDeltaArrivalTimesNs.reserve(kStoredArrivalPe.size() - 1);
+
+    for (std::size_t i = 1; i < kStoredArrivalPe.size(); ++i) {
+      if (deltaArrivalTimeCounts[i] <= 0) {
+        continue;
+      }
+      const double meanNs =
+          deltaArrivalTimeSumsNs[i] / deltaArrivalTimeCounts[i];
+      const double varianceNs =
+          std::max(0.0,
+                   deltaArrivalTimeSqSumsNs[i] / deltaArrivalTimeCounts[i] -
+                       meanNs * meanNs);
+      deltaArrivalIndices.push_back(kStoredArrivalPe[i]);
+      meanDeltaArrivalTimesNs.push_back(meanNs);
+      sigmaDeltaArrivalTimesNs.push_back(std::sqrt(varianceNs));
+    }
+
+    if (!deltaArrivalIndices.empty()) {
+      TCanvas canvas("c_mean_delta_arrival_time_vs_pe_index",
+                     "Mean Arrival-Time Difference vs Threshold", 1000, 700);
+      TGraph graph(static_cast<int>(deltaArrivalIndices.size()),
+                   deltaArrivalIndices.data(), meanDeltaArrivalTimesNs.data());
+      graph.SetTitle(
+          "Mean Arrival-Time Difference vs Threshold;Photoelectron threshold;Mean [t_{N} - t_{1}] from muon [ns]");
+      graph.SetMarkerStyle(20);
+      graph.SetMarkerSize(0.9);
+      graph.SetMarkerColor(kBlue + 2);
+      graph.SetLineColor(kBlue + 2);
+      graph.SetLineWidth(2);
+      graph.Draw("ALP");
+
+      SaveCanvas(canvas, outputDir, "mean_delta_arrival_time_vs_threshold");
+
+      TCanvas sigmaCanvas("c_sigma_delta_arrival_time_vs_pe_index",
+                          "Sigma of Arrival-Time Difference vs Threshold",
+                          1000, 700);
+      TGraph sigmaGraph(static_cast<int>(deltaArrivalIndices.size()),
+                        deltaArrivalIndices.data(),
+                        sigmaDeltaArrivalTimesNs.data());
+      sigmaGraph.SetTitle(
+          "Sigma of Arrival-Time Difference vs Threshold;Photoelectron threshold;Sigma of [t_{N} - t_{1}] [ns]");
+      sigmaGraph.SetMarkerStyle(20);
+      sigmaGraph.SetMarkerSize(0.9);
+      sigmaGraph.SetMarkerColor(kRed + 1);
+      sigmaGraph.SetLineColor(kRed + 1);
+      sigmaGraph.SetLineWidth(2);
+      sigmaGraph.Draw("ALP");
+
+      SaveCanvas(sigmaCanvas, outputDir, "sigma_delta_arrival_time_vs_threshold");
     }
   }
 }

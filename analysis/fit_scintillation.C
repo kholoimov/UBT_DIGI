@@ -168,7 +168,7 @@ std::vector<Double_t> LoadInputArray(const std::string& inputPath)
     return values;
 }
 
-void fit_scintillation(const char* inputPath = "analysis/fit_scintillation_input_default.dat")
+void fit_scintillation(const char* inputPath = "analysis/input/fit_scintillation_input_default.dat")
 {
     gStyle->SetOptStat(0);
     gStyle->SetOptFit(0);
