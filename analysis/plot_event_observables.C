@@ -168,15 +168,15 @@ void plot_event_observables(
   auto scintBirthTimeHistogram = std::make_unique<TH1D>(
       "scintillation_birth_time_histogram",
       "Scintillation and Detected-Photon Timing;time [ns];counts",
-      160, 0.0, 8.0);
+      160, 0.0, 60.0);
   auto detectedPhotonBirthTimeHistogram = std::make_unique<TH1D>(
       "detected_photon_birth_time_histogram",
       "Scintillation and Detected-Photon Timing;time [ns];counts",
-      160, 0.0, 8.0);
+      160, 0.0, 60.0);
   auto detectedPhotonArrivalTimeHistogram = std::make_unique<TH1D>(
       "detected_photon_arrival_time_histogram",
       "Scintillation and Detected-Photon Timing;time [ns];counts",
-      160, 0.0, 8.0);
+      160, 0.0, 60.0);
 
   std::vector<double> thresholdValues;
   std::vector<double> sigmaValues;
@@ -537,7 +537,7 @@ void plot_event_observables(
                  detectedPhotonArrivalTimeHistogram->GetMaximum()));
     if (maxCounts > 0.0) {
       scintBirthTimeHistogram->SetMaximum(maxCounts * 1.4);
-      scintBirthTimeHistogram->SetMinimum(0.5);
+      scintBirthTimeHistogram->SetMinimum(1e3);
     }
 
     scintBirthTimeHistogram->Draw("HIST");
