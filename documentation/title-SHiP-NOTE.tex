@@ -16,8 +16,17 @@
 \vspace*{-2.5cm}
 \centerline{\large EUROPEAN ORGANIZATION FOR NUCLEAR RESEARCH (CERN)}
 \vspace*{0.2cm}
+\newcommand{\shiplogobox}{%
+  \IfFileExists{SHiP-logo.pdf}{%
+    \includegraphics[width=0.15\linewidth]{SHiP-logo.pdf}%
+  }{%
+    \IfFileExists{SHiP-logo.eps}{%
+      \includegraphics[width=0.15\linewidth]{SHiP-logo.eps}%
+    }{}%
+  }%
+}
 \hspace*{-15mm}\begin{tabular*}{16.5cm}{lc@{\extracolsep{\fill}}r}
-\vspace*{-10mm}\mbox{\includegraphics[width=0.15\linewidth]{SHiP-logo.pdf}}& & \\
+\vspace*{-10mm}\mbox{\shiplogobox}& & \\
  & & CERN-SHiP-NOTE-2026-CDS number \\  % ID 
  & & \today \\ % Date - Can also hardwire e.g.: 23 March 2010
 % & & \\
