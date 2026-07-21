@@ -49,24 +49,36 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
 
   auto* mpt = new G4MaterialPropertiesTable();
 
-  const G4int nEntries = 4;
-  G4double photonEnergy[nEntries] = {2.0 * eV, 2.5 * eV, 3.0 * eV, 3.5 * eV};
-  G4double scintRefractiveIndex[nEntries] = {1.58, 1.58, 1.58, 1.58};
+  const G4int nEntries = 5;
+  G4double photonEnergy[nEntries] = {3.10 * eV, 3.30 * eV, 3.50 * eV,
+                                     3.65 * eV, 3.80 * eV};
+  G4double scintRefractiveIndex[nEntries] = {1.58, 1.58, 1.58, 1.58, 1.58};
   G4double absorptionLength[nEntries] = {210.0 * cm, 210.0 * cm, 210.0 * cm,
-                                         210.0 * cm};
-  G4double emissionSpectrum[nEntries] = {0.2, 0.8, 1.0, 0.4};
-  G4double airRefractiveIndex[nEntries] = {1.00, 1.00, 1.00, 1.00};
-  G4double greaseRefractiveIndex[nEntries] = {1.46, 1.46, 1.46, 1.46};
-  G4double glassRefractiveIndex[nEntries] = {1.49, 1.49, 1.50, 1.50};
-  G4double photocathodeRefractiveIndex[nEntries] = {2.7, 2.7, 2.8, 2.8};
+                                         210.0 * cm, 210.0 * cm};
+  // Approximate p-terphenyl-only emission spectrum.
+  // The shape is chosen to place the broad maximum in the near-UV around
+  // 340-370 nm, consistent with:
+  // - Journal of Crystal Growth 642 (2026) 128597:
+  //   pure p-terphenyl PL peak near 370 nm under UV excitation
+  // - Frontiers in Physics 12 (2024) 1289759:
+  //   literature summary for p-terphenyl emission in 290-400 nm
+  //   with peak near 338 nm
+  // These values are a compact Geant4 approximation, not a digitized spectrum.
+  G4double emissionSpectrum[nEntries] = {0.10, 0.55, 1.00, 0.85, 0.25};
+  G4double airRefractiveIndex[nEntries] = {1.00, 1.00, 1.00, 1.00, 1.00};
+  G4double greaseRefractiveIndex[nEntries] = {1.46, 1.46, 1.46, 1.46, 1.46};
+  G4double glassRefractiveIndex[nEntries] = {1.49, 1.49, 1.50, 1.50, 1.50};
+  G4double photocathodeRefractiveIndex[nEntries] = {2.7, 2.7, 2.8, 2.8, 2.8};
   G4double greaseAbsorption[nEntries] = {500.0 * cm, 500.0 * cm, 500.0 * cm,
-                                         500.0 * cm};
+                                         500.0 * cm, 500.0 * cm};
   G4double glassAbsorption[nEntries] = {300.0 * cm, 300.0 * cm, 300.0 * cm,
-                                        300.0 * cm};
+                                        300.0 * cm, 300.0 * cm};
   G4double photocathodeAbsorption[nEntries] = {1.0e-6 * mm, 1.0e-6 * mm,
-                                               1.0e-6 * mm, 1.0e-6 * mm};
+                                               1.0e-6 * mm, 1.0e-6 * mm,
+                                               1.0e-6 * mm};
   G4double wrapReflectivity[nEntries] = {kWrapReflectivity, kWrapReflectivity,
-                                         kWrapReflectivity, kWrapReflectivity};
+                                         kWrapReflectivity, kWrapReflectivity,
+                                         kWrapReflectivity};
 
   mpt->AddProperty("RINDEX", photonEnergy, scintRefractiveIndex, nEntries);
   mpt->AddProperty("ABSLENGTH", photonEnergy, absorptionLength, nEntries);
