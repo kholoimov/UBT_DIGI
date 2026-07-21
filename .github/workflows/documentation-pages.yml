@@ -1,0 +1,122 @@
+name: Documentation PDF
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - '.github/workflows/documentation-pages.yml'
+      - 'documentation/**'
+      - 'src/**'
+      - 'include/**'
+      - 'analysis/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: documentation-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Compile LaTeX document
+        uses: xu-cheng/latex-action@v3
+        with:
+          root_file: main.tex
+          working_directory: documentation
+          latexmk_use_xelatex: false
+          latexmk_shell_escape: false
+
+      - name: Prepare GitHub Pages artifact
+        run: |
+          mkdir -p public
+          cp documentation/main.pdf public/ubt-digi-implementation-note.pdf
+          cat > public/index.html <<'EOF'
+          <!doctype html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>UBT_DIGI Documentation</title>
+            <style>
+              body {
+                font-family: Georgia, "Times New Roman", serif;
+                margin: 0;
+                padding: 3rem 1.5rem;
+                background: #f6f3ee;
+                color: #1d1b19;
+              }
+              main {
+                max-width: 52rem;
+                margin: 0 auto;
+                background: #fffdfa;
+                border: 1px solid #ddd4c7;
+                padding: 2rem;
+                box-shadow: 0 12px 30px rgba(0, 0, 0, 0.06);
+              }
+              h1 {
+                margin-top: 0;
+                font-size: 2rem;
+              }
+              a {
+                color: #004c6d;
+              }
+              .button {
+                display: inline-block;
+                margin-top: 1rem;
+                padding: 0.8rem 1.1rem;
+                background: #004c6d;
+                color: white;
+                text-decoration: none;
+                border-radius: 0.35rem;
+              }
+              .meta {
+                margin-top: 1.5rem;
+                color: #5a544d;
+                font-size: 0.95rem;
+              }
+            </style>
+          </head>
+          <body>
+            <main>
+              <h1>UBT_DIGI Documentation</h1>
+              <p>
+                This page publishes the current PDF build of the implementation note
+                from the repository documentation sources.
+              </p>
+              <p>
+                <a class="button" href="ubt-digi-implementation-note.pdf">Open PDF</a>
+              </p>
+              <p class="meta">
+                Generated automatically by GitHub Actions from <code>documentation/main.tex</code>.
+              </p>
+            </main>
+          </body>
+          </html>
+          EOF
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

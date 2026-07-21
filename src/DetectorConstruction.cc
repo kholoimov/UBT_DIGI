@@ -36,7 +36,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
   auto* hydrogen = nist->FindOrBuildElement("H");
   auto* silicon = nist->FindOrBuildElement("Si");
 
-  auto* scintillator = new G4Material("PTerphenylScintillator", 1.23 * g / cm3, 2);
+  auto* scintillator =
+      new G4Material("PTerphenylPOPOPScintillator", 1.23 * g / cm3, 2);
   scintillator->AddElement(carbon, 18);
   scintillator->AddElement(hydrogen, 14);
 
@@ -50,21 +51,24 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
   auto* mpt = new G4MaterialPropertiesTable();
 
   const G4int nEntries = 5;
-  G4double photonEnergy[nEntries] = {3.10 * eV, 3.30 * eV, 3.50 * eV,
-                                     3.65 * eV, 3.80 * eV};
+  G4double photonEnergy[nEntries] = {2.75 * eV, 2.85 * eV, 2.93 * eV,
+                                     3.00 * eV, 3.10 * eV};
   G4double scintRefractiveIndex[nEntries] = {1.58, 1.58, 1.58, 1.58, 1.58};
   G4double absorptionLength[nEntries] = {210.0 * cm, 210.0 * cm, 210.0 * cm,
                                          210.0 * cm, 210.0 * cm};
-  // Approximate p-terphenyl-only emission spectrum.
-  // The shape is chosen to place the broad maximum in the near-UV around
-  // 340-370 nm, consistent with:
-  // - Journal of Crystal Growth 642 (2026) 128597:
-  //   pure p-terphenyl PL peak near 370 nm under UV excitation
+  // Effective p-terphenyl + POPOP scintillation emission spectrum.
+  // The host material is still represented by a simplified hydrocarbon bulk,
+  // but the emitted-light spectrum is shifted to the blue POPOP-dominated band.
+  // The shape is chosen to peak near 415-425 nm, consistent with:
   // - Frontiers in Physics 12 (2024) 1289759:
-  //   literature summary for p-terphenyl emission in 290-400 nm
-  //   with peak near 338 nm
-  // These values are a compact Geant4 approximation, not a digitized spectrum.
-  G4double emissionSpectrum[nEntries] = {0.10, 0.55, 1.00, 0.85, 0.25};
+  //   plastic-scintillator / wavelength-shifter summaries with final emission
+  //   near 423 nm
+  // - Wiley Journal of Spectroscopy (2012) 458126:
+  //   POPOP fluorescence near 415-416 nm in solution
+  // The peak position is taken from the literature, while the exact 5-point
+  // table below is a compact hand-built Geant4 approximation, not a digitized
+  // experimental spectrum.
+  G4double emissionSpectrum[nEntries] = {0.10, 0.55, 1.00, 0.75, 0.25};
   G4double airRefractiveIndex[nEntries] = {1.00, 1.00, 1.00, 1.00, 1.00};
   G4double greaseRefractiveIndex[nEntries] = {1.46, 1.46, 1.46, 1.46, 1.46};
   G4double glassRefractiveIndex[nEntries] = {1.49, 1.49, 1.50, 1.50, 1.50};

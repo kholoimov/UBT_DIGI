@@ -1,0 +1,72 @@
+% $Id: title-SHiP-PROC.tex 14593 2012-01-27 14:43:32Z uegede $
+% ===============================================================================
+% Purpose: SHiP conference proceedings title page template
+% Author: 
+% Created on: 2010-10-05
+% ===============================================================================
+
+%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%  TITLE PAGE  %%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{titlepage}
+
+\pagenumbering{roman}
+
+% Header ---------------------------------------------------
+\vspace*{-2.5cm}
+\centerline{\large EUROPEAN ORGANIZATION FOR NUCLEAR RESEARCH (CERN)}
+\vspace*{0.2cm}
+\hspace*{-15mm}\begin{tabular*}{16.5cm}{lc@{\extracolsep{\fill}}r}
+\vspace*{-10mm}\mbox{\includegraphics[width=0.15\linewidth]{SHiP-logo.pdf}}& & \\
+ & & CERN-SHiP-PROC-2016-CDS number \\  % ID 
+ & & \today \\ % Date - Can also hardwire e.g.: 23 March 2010
+% & & \\
+\hline
+\end{tabular*}
+
+\vspace*{4.0cm}
+
+% Title --------------------------------------------------
+{\bf\boldmath\huge
+\begin{center}
+  This is the title of the note
+\end{center}
+}
+
+\vspace*{2.0cm}
+
+% Authors -------------------------------------------------
+\begin{center}
+A.~Author$^1$ and B.~Author$^2$
+\bigskip\\
+{\it\footnotesize
+$^1$CERN, $^2$Some HEP Institute\\
+}
+\end{center}
+
+\vspace{\fill}
+
+% Abstract -----------------------------------------------
+\begin{abstract}
+  \noindent
+This is the abstract of the note.
+\end{abstract}
+
+\vspace*{2.0cm}
+\vspace{\fill}
+
+\end{titlepage}
+
+
+\pagestyle{empty}  % no page number for the title 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%  EOD OF TInner TrackerLE PAGE  %%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%  empty page follows the title page ----
+\newpage
+\setcounter{page}{2}
+\mbox{~}
+
+\cleardoublepage

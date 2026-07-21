@@ -1,0 +1,279 @@
+\section{Geometry}
+\subsection{Volumes and Dimensions}
+The geometry is defined in \texttt{src/DetectorConstruction.cc}. The world volume is an air box with half-size \texttt{(0.5 m, 0.5 m, 0.5 m)}. The active scintillator is a rectangular box with half-dimensions \texttt{(20 mm, 20 mm, 5 mm)}, corresponding to a full size of \texttt{40 x 40 x 10 mm$^{3}$}. The photosensor active transverse area is modeled with half-dimensions \texttt{(3 mm, 3 mm)}, corresponding to a full active face of \texttt{6 x 6 mm$^{2}$}.
+
+Along the positive $z$ direction, the sensor stack is:
+\begin{enumerate}[label=\arabic*.]
+\item scintillator, ending at $z = +5~\mathrm{mm}$,
+\item optical grease with thickness $0.2~\mathrm{mm}$,
+\item glass window with thickness $1.0~\mathrm{mm}$,
+\item photocathode / SiPM-sensitive slab with thickness $0.1~\mathrm{mm}$.
+\end{enumerate}
+
+All these volumes are centered on the same $x=y=0$ axis. The sensor is therefore mounted on the center of the $+z$ face of the scintillator.
+
+\subsection{Coordinate Conventions}
+The simulation uses the Geant4 global Cartesian system:
+\begin{itemize}
+\item the scintillator center is at $(0,0,0)$,
+\item the beam propagates in the $+z$ direction,
+\item the sensor stack is on the $+z$ side,
+\item the muon source plane is upstream at negative $z$.
+\end{itemize}
+
+Primary hit positions stored in the output are the first recorded muon hit coordinates in the scintillator, in millimeters.
+
+\subsection{Primary Generator Geometry}
+The primary particle generator is defined in \texttt{src/PrimaryGeneratorAction.cc}. It uses a one-particle gun with:
+\begin{itemize}
+\item particle type: $\mu^-$,
+\item initial position: $(0,0,-30~\mathrm{mm})$ by default,
+\item momentum direction: $(0,0,1)$.
+\end{itemize}
+
+If position randomization is enabled, the initial $x$ and $y$ are sampled uniformly within a square beam spot:
+\[
+x, y \in [-a, +a],
+\]
+where $a$ is the configurable half-size. Internally, the member variable is initialized to $20~\mathrm{mm}$, while the UI messenger default string is currently set to $15~\mathrm{mm}$. This is a convention inconsistency that should be cleaned up.
+
+Muon kinetic energy is sampled uniformly between
+\[
+1~\mathrm{GeV} \le E_\mu \le 20~\mathrm{GeV}.
+\]
+
+\section{Materials and Optical Properties}
+\subsection{Scintillator Material}
+The scintillator is modeled as an effective para-terphenyl + POPOP mixture with density
+\[
+\rho = 1.23~\mathrm{g/cm^3}.
+\]
+At the Geant4 material level, its bulk composition is still implemented as $\mathrm{C}_{18}\mathrm{H}_{14}$, that is, the host para-terphenyl stoichiometry. The POPOP admixture is represented through the emission spectrum rather than through an explicit dopant fraction in the material composition.
+
+\subsection{Other Materials}
+The remaining materials are:
+\begin{itemize}
+\item world: Geant4 air,
+\item window: Geant4 Pyrex glass,
+\item optical grease: simplified hydrocarbon material,
+\item photocathode: simplified silicon slab.
+\end{itemize}
+
+\subsection{Emission Spectrum Convention}
+The scintillation emission is specified as a tabulated relative spectrum versus photon energy. In the current implementation the table is:
+\begin{center}
+\begin{tabular}{cc}
+\toprule
+Photon energy [eV] & Relative intensity \\
+\midrule
+2.75 & 0.10 \\
+2.85 & 0.55 \\
+2.93 & 1.00 \\
+3.00 & 0.75 \\
+3.10 & 0.25 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+This is used for both \texttt{SCINTILLATIONCOMPONENT1} and \texttt{SCINTILLATIONCOMPONENT2}. Therefore, the fast and slow scintillation components differ only in time structure and relative yield, not in spectral shape.
+
+These values are currently implemented as a compact approximation to the final blue emission expected from a para-terphenyl + POPOP scintillator, based on:
+\begin{itemize}
+\item Frontiers in Physics 12 (2024) 1289759, summarizing wavelength-shifted plastic-scintillator emission with a final band near $423~\mathrm{nm}$,
+\item Journal of Spectroscopy (2012) 458126, reporting POPOP fluorescence near $415$--$416~\mathrm{nm}$ in solution.
+\end{itemize}
+
+The peak position is taken from the literature, while the exact five-point table is a compact hand-built Geant4 approximation rather than a digitized experimental spectrum. The implementation should therefore be understood as an effective mixed-emission model, not as a microscopic host-absorption / dopant-reemission simulation.
+
+\subsection{Transport Properties}
+The present optical properties are simplified:
+\begin{itemize}
+\item scintillator refractive index: constant at 1.58,
+\item scintillator absorption length: constant at $210~\mathrm{cm}$,
+\item grease refractive index: constant at 1.46,
+\item glass refractive index: approximately 1.49--1.50,
+\item photocathode refractive index: approximately 2.7--2.8,
+\item grease absorption length: $500~\mathrm{cm}$,
+\item glass absorption length: $300~\mathrm{cm}$,
+\item photocathode absorption length: $10^{-6}~\mathrm{mm}$.
+\end{itemize}
+
+The very short photocathode absorption length is used as an efficient absorbing sink for photons that reach the sensitive surface.
+
+\subsection{Surface Model}
+Two optical surface conventions are used:
+\begin{enumerate}[label=\arabic*.]
+\item polished dielectric--dielectric interfaces between scintillator and grease, and between grease and window,
+\item a diffuse wrapping skin surface on the scintillator with:
+  \begin{itemize}
+  \item reflectivity $R = 0.96$,
+  \item \texttt{groundfrontpainted} finish,
+  \item \texttt{unified} model,
+  \item $\sigma_\alpha = 0.35$.
+  \end{itemize}
+\end{enumerate}
+
+This wrapping model gives randomized reflected directions and introduces angular smearing at the boundaries.
+
+\section{Scintillation Timing Model}
+The timing constants are centralized in \texttt{include/TimingModelParameters.hh}. The current values are:
+\begin{align*}
+\tau_\mathrm{rise} &= 0.7~\mathrm{ns}, \\
+\tau_\mathrm{fast} &= 2.0348~\mathrm{ns}, \\
+\tau_\mathrm{slow} &= 11.3607~\mathrm{ns}, \\
+Y_\mathrm{fast} &= 0.889145, \\
+Y_\mathrm{slow} &= 0.110855.
+\end{align*}
+
+The total scintillation yield is set to
+\[
+10000~\mathrm{photons/MeV}.
+\]
+
+Finite rise time is enabled in the optical physics configuration. The same rise time is assigned to both scintillation components.
+
+\section{Photon Detection Model}
+\subsection{Boundary-Level Convention}
+The PMT / SiPM sensitive detector acts only on optical photons crossing into the photocathode volume at a geometric boundary. This means the code does not simulate avalanche formation or analog waveform development. Instead, it applies two Bernoulli filters:
+\begin{enumerate}[label=\arabic*.]
+\item light-collection efficiency,
+\item photon-detection efficiency.
+\end{enumerate}
+
+\subsection{Efficiencies}
+In \texttt{src/PMTSensitiveDetector.cc}, the current values are:
+\begin{align*}
+\epsilon_\mathrm{LC} &= 0.30, \\
+\epsilon_\mathrm{PDE} &= 0.64.
+\end{align*}
+
+The effective mean photoelectron conversion for photons that geometrically reach the sensor boundary is therefore
+\[
+\epsilon_\mathrm{eff} = \epsilon_\mathrm{LC}\,\epsilon_\mathrm{PDE} = 0.192.
+\]
+
+This is a strong simplification. In particular:
+\begin{itemize}
+\item \(\epsilon_\mathrm{LC}\) is applied as a random kill even after geometric transport has already occurred,
+\item \(\epsilon_\mathrm{PDE}\) is wavelength-independent,
+\item neither angle dependence nor fill factor is modeled explicitly,
+\item no crosstalk, afterpulsing, recovery, or dark counts are included.
+\end{itemize}
+
+\section{Digitization Conventions}
+\subsection{Charge Model}
+Digitization is handled in \texttt{src/ScintillatorDigitizerModule.cc}. The number of detected photoelectrons is converted into charge through:
+\[
+Q = N_\mathrm{pe} \cdot G \cdot e,
+\]
+with
+\begin{align*}
+G &= 2.8 \times 10^6, \\
+e &= 1.602176634 \times 10^{-19}\,\mathrm{C}.
+\end{align*}
+
+The code stores the charge in picocoulombs and uses
+\[
+\mathrm{ADC} = \mathrm{round}(Q[\mathrm{pC}]).
+\]
+Thus, the present ADC calibration is simply one ADC count per pC.
+
+\subsection{Trigger Convention}
+The trigger decision requires both:
+\begin{itemize}
+\item deposited energy above $0.20~\mathrm{MeV}$,
+\item PMT charge above $5~\mathrm{pC}$.
+\end{itemize}
+
+\subsection{Time Reference Conventions}
+Several different time references are used, and these are important:
+\begin{enumerate}[label=\arabic*.]
+\item \textbf{Absolute Geant4 global times}: used internally for photon births and arrivals.
+\item \textbf{Times from primary hit}: for arrival-threshold observables and stored photoelectron arrival columns, times are shifted by the earliest recorded primary hit time in the scintillator.
+\item \textbf{First PMT hit time}: stored in absolute nanoseconds.
+\end{enumerate}
+
+The function named \texttt{SetThreshold80TimeFromPrimary} currently stores the threshold-\(5\) photoelectron time from the muon hit. The data content is correct, but the naming is legacy and should be fixed.
+
+\section{ROOT Output Conventions}
+\subsection{Main Trees}
+The code writes three ntuples:
+\begin{enumerate}[label=\arabic*.]
+\item \texttt{events},
+\item \texttt{pmt\_photon\_births},
+\item \texttt{scintillation\_photon\_birth\_times}.
+\end{enumerate}
+
+\subsection{Special Rows in \texttt{events}}
+The \texttt{events} tree contains both physical events and synthetic summary rows:
+\begin{itemize}
+\item \texttt{event\_id = -1}, \texttt{primary\_particle = "RUN\_SUMMARY"},
+\item \texttt{event\_id = -2}, \texttt{primary\_particle = "THRESHOLD\_SCAN"}.
+\end{itemize}
+
+This is convenient for quick downstream analysis, but it mixes different semantic object types inside one tree. Analyses must explicitly filter these rows.
+
+\subsection{Stored Arrival-Time Columns}
+The event tree stores photoelectron arrival times from the muon-hit reference for the following PE indices:
+\[
+1, 2, 3, 4, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 140, 160, 180, 200.
+\]
+
+The naming convention is:
+\[
+\texttt{photoelectron\_arrival\_<N>\_from\_muon\_ns}.
+\]
+
+Unavailable values are written as \(-1\).
+
+\subsection{Incident Photon Records}
+The \texttt{pmt\_photon\_births} tree stores, for each photon that reached the sensor boundary:
+\begin{itemize}
+\item event ID,
+\item birth position \((x,y,z)\),
+\item birth time,
+\item arrival time.
+\end{itemize}
+
+Internally these records are stored as
+\[
+\{x, y, z, t_\mathrm{birth}, t_\mathrm{arrival}\}.
+\]
+
+\section{Advantages of the Current Implementation}
+\begin{enumerate}[label=\arabic*.]
+\item \textbf{Simple and transparent geometry.} The model is easy to read and modify.
+\item \textbf{Centralized timing constants.} Rise, fast, and slow components are stored in one header and reused by the timing validation tools.
+\item \textbf{Good analysis visibility.} The code stores not only event-level summary quantities but also photon birth and arrival information.
+\item \textbf{Fast iteration.} The simplified detection model is cheap to run and practical for scans.
+\item \textbf{Direct threshold studies.} The stored photoelectron arrival columns are useful for timing-vs-threshold analysis.
+\end{enumerate}
+
+\section{Limitations and Drawbacks}
+\begin{enumerate}[label=\arabic*.]
+\item \textbf{Double simplification of light collection.} Optical transport is simulated, but an additional stochastic ``light collection efficiency'' cut is also applied at the sensor. This mixes geometric and phenomenological losses.
+\item \textbf{Wavelength-independent PDE.} The photosensor response does not depend on wavelength, although the emission spectrum now does.
+\item \textbf{No explicit host-to-dopant re-emission chain.} The present scintillator now uses an effective p-terphenyl + POPOP final emission spectrum, but it still does not simulate absorption by POPOP followed by delayed re-emission.
+\item \textbf{No explicit surface roughness study beyond one wrap model.} The interface finishes are fixed and not experimentally tuned.
+\item \textbf{Summary rows mixed into the event tree.} Convenient, but easy to misuse in downstream analysis.
+\item \textbf{Naming inconsistencies.} The threshold-5 quantity is stored through a method named as if it were an 80-photoelectron threshold.
+\item \textbf{Very simplified electronics.} Charge is proportional only to \(N_\mathrm{pe}\), with no single-photoelectron gain spread, noise, shaping, saturation, or baseline effects.
+\end{enumerate}
+
+\section{Most Useful Improvements}
+The following upgrades would provide the largest gain in realism:
+\begin{enumerate}[label=\arabic*.]
+\item Replace the current compact effective emission approximation with a digitized measured p-terphenyl + POPOP spectrum.
+\item If wavelength shifting is important, implement explicit POPOP absorption and re-emission rather than only the final effective emission band.
+\item Replace the constant PDE with a wavelength-dependent PDE curve for the actual SiPM model.
+\item Remove or reinterpret the extra \(\epsilon_\mathrm{LC}\) Bernoulli cut so that geometry and phenomenological losses are not counted ambiguously.
+\item Introduce gain fluctuations, dark counts, and optionally waveform-level digitization if charge-width comparisons are important.
+\item Separate event rows and run-summary rows into different trees or metadata objects.
+\item Harmonize variable names, especially threshold-related naming.
+\item Make the muon beam-spot default value consistent between the internal variable and the UI default string.
+\end{enumerate}
+
+\section{Summary}
+The present implementation is a useful intermediate model: it contains full Geant4 optical transport through a realistic small detector geometry, but it still uses a deliberately simplified sensor and electronics model. This makes it practical for timing studies and fast iteration, while also making clear where phenomenological tuning enters the chain.
+
+For timing scans and geometry studies, the current model is already informative. For quantitative comparison to measured charge spectra, wavelength-shifted emission, or realistic SiPM response, additional work is still needed.
