@@ -168,23 +168,6 @@ For normal event rows:
 - `threshold_scan_pe`, `threshold_scan_mean_ns`, and `threshold_scan_sigma_ns` are set to `-1`
 - the `photoelectron_arrival_*_from_muon_ns` branches are stored only for the thresholds `{1, 2, 3, 4, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 140, 160, 180, 200}`, with `-1` when that photoelectron index is not reached in the event
 
-At the end of each run, the code appends one extra row to the same `events` tree with:
-
-- `event_id = -1`
-- `primary_particle = RUN_SUMMARY`
-- `scintillation_production_fwhm_ns` filled with the run-level FWHM of `scintillation_production_time_ns`
-- `photoelectron_threshold_5_from_muon_ns` filled with the run-average of the valid event `t5` values
-- all stored `photoelectron_arrival_*_from_muon_ns` branches set to `-1`
-
-The code also appends one `THRESHOLD_SCAN` row per threshold to the same `events` tree with:
-
-- `event_id = -2`
-- `primary_particle = THRESHOLD_SCAN`
-- `threshold_scan_pe` set to the detected-photoelectron threshold
-- `threshold_scan_mean_ns` set to the run-level mean threshold-crossing time
-- `threshold_scan_sigma_ns` set to the run-level sigma of the threshold-crossing time
-- all stored `photoelectron_arrival_*_from_muon_ns` branches set to `-1`
-
 The ROOT file also contains a `pmt_photon_births` ntuple with one row per photon that reaches the sensor:
 
 ```text
