@@ -180,15 +180,15 @@ void plot_event_observables(
   auto deltaArrivalTimePe100MinusPe1Histogram = std::make_unique<TH1D>(
       "delta_arrival_time_pe100_minus_pe1_histogram",
       "Arrival-Time Difference PE 100 - PE 1;#Deltat = t_{100} - t_{1} [ns];counts",
-      160, 0.0, 8.0);
+      160, -4, 4.0);
   auto deltaArrivalTimePe1MinusPe100Histogram = std::make_unique<TH1D>(
       "delta_arrival_time_pe1_minus_pe100_histogram",
       "Arrival-Time Comparison with PE 100;time [ns];counts",
-      240, -8.0, 8.0);
+      240, -4.0, 4.0);
   auto arrivalTimePe100Histogram = std::make_unique<TH1D>(
       "arrival_time_pe100_histogram",
       "Arrival-Time Comparison with PE 100;time [ns];counts",
-      240, -8.0, 8.0);
+      240, -4.0, 4.0);
 
   std::vector<double> thresholdValues;
   std::vector<double> sigmaValues;
@@ -247,7 +247,7 @@ void plot_event_observables(
 
           if (kStoredArrivalPe[j] == 100) {
             deltaArrivalTimePe100MinusPe1Histogram->Fill(deltaArrivalTimeNs);
-            deltaArrivalTimePe1MinusPe100Histogram->Fill(-deltaArrivalTimeNs);
+            deltaArrivalTimePe1MinusPe100Histogram->Fill(deltaArrivalTimeNs);
             arrivalTimePe100Histogram->Fill(arrivalTimesNs[j]);
           }
         }
@@ -686,6 +686,8 @@ void plot_event_observables(
   if (deltaArrivalTimePe100MinusPe1Histogram->GetEntries() > 0.0) {
     TCanvas canvas("c_delta_arrival_time_pe100_minus_pe1",
                    "Arrival Time Difference PE 100 - PE 1", 1000, 700);
+
+    deltaArrivalTimePe100MinusPe1Histogram->Fit("gaus");
     deltaArrivalTimePe100MinusPe1Histogram->SetLineColor(kBlue + 2);
     deltaArrivalTimePe100MinusPe1Histogram->SetLineWidth(3);
     deltaArrivalTimePe100MinusPe1Histogram->Draw("HIST");
@@ -726,7 +728,7 @@ void plot_event_observables(
 
     TLegend legend(0.55, 0.74, 0.88, 0.88);
     legend.AddEntry(deltaArrivalTimePe1MinusPe100Histogram.get(),
-                    "t_{1} - t_{100}", "l");
+                    "t_{100} - t_{1}", "l");
     legend.AddEntry(arrivalTimePe100Histogram.get(),
                     "t_{100}", "l");
     legend.Draw();
