@@ -1,6 +1,6 @@
 \section{Geometry}
 \subsection{Volumes and Dimensions}
-The geometry is defined in \texttt{src/DetectorConstruction.cc}. The world volume is an air box with half-size \texttt{(0.5 m, 0.5 m, 0.5 m)}. The active scintillator is a rectangular box with half-dimensions \texttt{(20 mm, 20 mm, 5 mm)}, corresponding to a full size of \texttt{40 x 40 x 10 mm$^{3}$}. The photosensor active transverse area is modeled with half-dimensions \texttt{(3 mm, 3 mm)}, corresponding to a full active face of \texttt{6 x 6 mm$^{2}$}.
+The geometry is defined in \texttt{src/DetectorConstruction.cc}. The world volume is an air box with half-size \texttt{(0.5 m, 0.5 m, 0.5 m)}. The active scintillator transverse size is selectable between \texttt{20 x 20 mm$^{2}$} and \texttt{40 x 40 mm$^{2}$}; its thickness remains \texttt{10 mm}.  The default is \texttt{40 x 40 x 10 mm$^{3}$}, while setting \texttt{UBT\_SCINTILLATOR\_SIZE\_MM=20} before application startup selects \texttt{20 x 20 x 10 mm$^{3}$}.  Other values are rejected. The photosensor is not scaled with the tile: its active transverse area retains half-dimensions \texttt{(3 mm, 3 mm)}, corresponding to a full active face of \texttt{6 x 6 mm$^{2}$} for both configurations.
 
 Along the positive $z$ direction, the sensor stack is:
 \begin{enumerate}[label=\arabic*.]
@@ -36,6 +36,15 @@ If position randomization is enabled, the initial $x$ and $y$ are sampled unifor
 x, y \in [-a, +a],
 \]
 where $a$ is the configurable half-size. Internally, the member variable is initialized to $20~\mathrm{mm}$, while the UI messenger default string is currently set to $15~\mathrm{mm}$. This is a convention inconsistency that should be cleaned up.
+For a uniformly illuminated $20\times20~\mathrm{mm^2}$ tile, $a$ must not
+exceed $10~\mathrm{mm}$.  The supplied \texttt{macros/run\_muons\_20mm.mac}
+uses this limit.  A representative invocation is
+\begin{verbatim}
+UBT_SCINTILLATOR_SIZE_MM=20 ./build/ubt_scintillator macros/run_muons_20mm.mac
+\end{verbatim}
+The selected transverse size is stored in every event-tree row as
+\texttt{tile\_size\_mm}; analysis programs consequently recover the simulated
+geometry from the file rather than relying on a fixed range.
 
 Muon kinetic energy is sampled uniformly between
 \[
@@ -501,7 +510,8 @@ transport.
 \subsection{Spatial uniformity of the ADC response}
 
 The color maps in Figure~\ref{fig:ubt-adc-position} use the primary hit
-position in the $40\times40~\mathrm{mm^2}$ tile.  The raw mean ADC map combines
+position across the configured $20\times20$ or $40\times40~\mathrm{mm^2}$ tile.
+Their axes and bin counts are derived from \texttt{tile\_size\_mm}. The raw mean ADC map combines
 energy-deposition fluctuations with position-dependent collection.  Dividing
 event by event by $E_\mathrm{dep}$ isolates the mean digitized response per unit
 deposited energy,
@@ -511,6 +521,14 @@ deposited energy,
 \]
 Empty bins indicate regions without selected positive-energy events and should
 not be interpreted as zero detector response.
+
+In addition to the color map, the analysis writes
+\texttt{analysis/plots/adc/adc\_per\_edep\_vs\_position.csv}.  Each row
+represents a $1\times1~\mathrm{mm^2}$ spatial bin and reports its $x$ and $y$
+center, number of selected events, mean ADC/MeV response, and standard error.
+The table therefore contains $20\times20$ rows for the small tile or
+$40\times40$ rows for the default tile, including explicitly reported empty
+bins.
 
 \IfFileExists{../analysis/plots/adc/mean_adc_vs_position.pdf}{%
 \begin{figure}[htb]

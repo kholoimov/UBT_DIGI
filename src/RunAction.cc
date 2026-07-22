@@ -19,6 +19,7 @@ constexpr int kTimingHistogramBins = 200;
 constexpr double kTimingHistogramMinNs = 0.0;
 constexpr double kTimingHistogramMaxNs = 50.0;
 constexpr int kArrivalTimeColumnOffset = 20;
+constexpr int kTileSizeColumn = kArrivalTimeColumnOffset + 20;
 constexpr std::array<int, 20> kStoredArrivalPe = {
     1,  2,  3,  4,  5,   10,  20,  30,  40,  50,
     60, 70, 80, 90, 100, 120, 140, 160, 180, 200};
@@ -138,8 +139,10 @@ double ComputeSigmaNs(double sumNs, double sumSqNs, int count) {
 }
 }  // namespace
 
-RunAction::RunAction(bool enableScintillatorPhotonStudies)
-    : fEnableScintillatorPhotonStudies(enableScintillatorPhotonStudies) {
+RunAction::RunAction(bool enableScintillatorPhotonStudies,
+                     double scintillatorSizeMm)
+    : fEnableScintillatorPhotonStudies(enableScintillatorPhotonStudies),
+      fScintillatorSizeMm(scintillatorSizeMm) {
   auto* analysisManager = G4AnalysisManager::Instance();
   analysisManager->SetDefaultFileType("root");
   analysisManager->SetFileName("scintillator_digi");
@@ -181,6 +184,7 @@ RunAction::RunAction(bool enableScintillatorPhotonStudies)
                                          std::to_string(thresholdPe) +
                                          "_from_muon_ns");
   }
+  analysisManager->CreateNtupleDColumn("tile_size_mm");
   analysisManager->FinishNtuple();
   analysisManager->CreateNtuple(
       "pmt_photon_births",
@@ -211,6 +215,9 @@ void RunAction::BeginOfRunAction(const G4Run*) {
          << (G4Threading::IsMasterThread() ? "master" : "worker") << " thread."
          << G4endl;
   if (G4Threading::IsMasterThread()) {
+    G4cout << "Scintillator transverse size: " << fScintillatorSizeMm << " x "
+           << fScintillatorSizeMm << " mm2; SiPM active area: 6 x 6 mm2"
+           << G4endl;
     G4cout << "Per-photon studies: "
            << (GetEnableScintillatorPhotonStudies() ? "enabled" : "disabled")
            << G4endl;
@@ -252,6 +259,8 @@ void RunAction::EndOfRunAction(const G4Run*) {
     for (std::size_t i = 0; i < kStoredArrivalPe.size(); ++i) {
       analysisManager->FillNtupleDColumn(0, kArrivalTimeColumnOffset + i, -1.0);
     }
+    analysisManager->FillNtupleDColumn(0, kTileSizeColumn,
+                                       fScintillatorSizeMm);
     analysisManager->AddNtupleRow(0);
 
     if (GetEnableScintillatorPhotonStudies()) {
@@ -288,6 +297,8 @@ void RunAction::EndOfRunAction(const G4Run*) {
           analysisManager->FillNtupleDColumn(0, kArrivalTimeColumnOffset + j,
                                              -1.0);
         }
+        analysisManager->FillNtupleDColumn(0, kTileSizeColumn,
+                                           fScintillatorSizeMm);
         analysisManager->AddNtupleRow(0);
       }
     }
@@ -359,6 +370,7 @@ void RunAction::RecordDigi(const ScintillatorDigi& digi) {
                   CLHEP::ns
             : -1.0);
   }
+  analysisManager->FillNtupleDColumn(kTileSizeColumn, fScintillatorSizeMm);
   analysisManager->AddNtupleRow();
 
   if (!GetEnableScintillatorPhotonStudies()) {

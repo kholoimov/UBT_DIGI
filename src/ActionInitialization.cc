@@ -8,7 +8,8 @@
 
 void ActionInitialization::Build() const {
   auto* runAction =
-      new RunAction(fOutputConfiguration->GetEnableScintillatorPhotonStudies());
+      new RunAction(fOutputConfiguration->GetEnableScintillatorPhotonStudies(),
+                    fOutputConfiguration->GetScintillatorSizeMm());
   SetUserAction(runAction);
   SetUserAction(new PrimaryGeneratorAction());
   SetUserAction(new EventAction(runAction));
@@ -17,5 +18,6 @@ void ActionInitialization::Build() const {
 
 void ActionInitialization::BuildForMaster() const {
   SetUserAction(new RunAction(
-      fOutputConfiguration->GetEnableScintillatorPhotonStudies()));
+      fOutputConfiguration->GetEnableScintillatorPhotonStudies(),
+      fOutputConfiguration->GetScintillatorSizeMm()));
 }

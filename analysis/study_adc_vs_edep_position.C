@@ -49,11 +49,15 @@ void study_adc_vs_edep_position(
   double edepMeV = 0.0;
   double hitXmm = 0.0;
   double hitYmm = 0.0;
+  double tileSizeMm = 40.0;
   events->SetBranchAddress("event_id", &eventId);
   events->SetBranchAddress("edep_mev", &edepMeV);
   events->SetBranchAddress("primary_hit_x_mm", &hitXmm);
   events->SetBranchAddress("primary_hit_y_mm", &hitYmm);
   events->SetBranchAddress("adc_counts", &adcCounts);
+  if (events->GetBranch("tile_size_mm") != nullptr) {
+    events->SetBranchAddress("tile_size_mm", &tileSizeMm);
+  }
 
   std::vector<EventRecord> records;
   records.reserve(events->GetEntries());
@@ -78,6 +82,8 @@ void study_adc_vs_edep_position(
   gSystem->mkdir(outputDirectory, true);
   const double edepLimit = std::max(1.0, 1.05 * maximumEdepMeV);
   const double adcLimit = std::max(10.0, 1.05 * maximumAdcCounts);
+  const int positionBins = static_cast<int>(tileSizeMm);
+  const double tileHalfSizeMm = 0.5 * tileSizeMm;
 
   TH2D adcVsEdep(
       "adc_vs_edep",
@@ -90,16 +96,19 @@ void study_adc_vs_edep_position(
   TProfile2D meanAdcVsPosition("mean_adc_vs_position",
                                "Mean ADC response across the tile;Primary hit "
                                "x [mm];Primary hit y [mm];Mean ADC counts",
-                               40, -20.0, 20.0, 40, -20.0, 20.0);
+                               positionBins, -tileHalfSizeMm, tileHalfSizeMm,
+                               positionBins, -tileHalfSizeMm, tileHalfSizeMm);
   TProfile2D meanAdcPerMeVVsPosition(
       "mean_adc_per_mev_vs_position",
       "Energy-normalized ADC response across the tile;Primary hit x "
       "[mm];Primary hit y [mm];Mean ADC counts / MeV",
-      40, -20.0, 20.0, 40, -20.0, 20.0);
+      positionBins, -tileHalfSizeMm, tileHalfSizeMm, positionBins,
+      -tileHalfSizeMm, tileHalfSizeMm);
   TH2D adcVsDistance("adc_vs_distance_from_center",
                      "ADC response versus distance from tile center;Distance "
                      "from center [mm];ADC counts",
-                     80, 0.0, 20.0 * std::sqrt(2.0), 100, 0.0, adcLimit);
+                     80, 0.0, tileHalfSizeMm * std::sqrt(2.0), 100, 0.0,
+                     adcLimit);
 
   for (const auto& record : records) {
     const double radiusMm = std::hypot(record.xMm, record.yMm);

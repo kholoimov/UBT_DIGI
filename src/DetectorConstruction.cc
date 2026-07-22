@@ -17,8 +17,6 @@
 #include "G4SystemOfUnits.hh"
 
 namespace {
-constexpr G4double kScintillatorHalfX = 20.0 * mm;
-constexpr G4double kScintillatorHalfY = 20.0 * mm;
 constexpr G4double kScintillatorHalfZ = 5.0 * mm;
 constexpr G4double kSipmHalfX = 3.0 * mm;
 constexpr G4double kSipmHalfY = 3.0 * mm;
@@ -135,7 +133,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
       new G4PVPlacement(nullptr, {}, worldLogical, "World", nullptr, false, 0);
 
   auto* scintillatorSolid = new G4Box(
-      "Scintillator", kScintillatorHalfX, kScintillatorHalfY, kScintillatorHalfZ);
+      "Scintillator", fScintillatorHalfSize * mm,
+      fScintillatorHalfSize * mm, kScintillatorHalfZ);
   fScintillatorLogical = new G4LogicalVolume(scintillatorSolid, scintillator,
                                              "ScintillatorLogical");
 

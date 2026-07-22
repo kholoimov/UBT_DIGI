@@ -11,7 +11,7 @@ and FairShip-integration descriptions are maintained in
 
 - configurable `mu-` and gamma particle gun
 - Geant4 scintillation and optical-photon transport
-- scintillator, optical grease, SiPM window, and photocathode geometry
+- selectable 20 x 20 or 40 x 40 mm scintillator with a fixed 6 x 6 mm SiPM
 - configurable distributed or central muon beam position
 - event-level deposited energy, photon, photoelectron, timing, charge, ADC, and
   trigger observables
@@ -53,6 +53,19 @@ Example muon and gamma runs:
 ./build/ubt_scintillator macros/run_muons_center.mac
 ./build/ubt_scintillator macros/run_gammas.mac
 ```
+
+The scintillator is 40 x 40 mm by default. Select the 20 x 20 mm tile with
+the environment variable below; the SiPM active area remains 6 x 6 mm:
+
+```bash
+UBT_SCINTILLATOR_SIZE_MM=20 \
+  ./build/ubt_scintillator macros/run_muons_20mm.mac
+```
+
+Only `20` and `40` are accepted. The 20 mm example restricts the randomized
+beam to the physical tile. The selected size is saved as `tile_size_mm` in
+every event-tree row so the analysis macros choose their spatial range
+automatically.
 
 Starting without a macro opens the interactive Geant4 UI:
 
@@ -122,6 +135,10 @@ root -l -q 'analysis/plot_event_observables.C("scintillator_digi.root","analysis
 root -l -q 'analysis/study_adc_vs_edep_position.C("scintillator_digi.root","analysis/adc_studies")'
 root -l -q 'analysis/plot_adc_per_edep_vs_position.C("scintillator_digi.root","analysis/adc_studies")'
 ```
+
+The energy-normalized position analysis additionally writes
+`adc/adc_per_edep_vs_position.csv`, a 1 x 1 mm-bin table containing the bin
+center, event count, mean ADC/MeV, and standard error.
 
 Photon timing analysis requires a simulation produced with photon-level output
 enabled:

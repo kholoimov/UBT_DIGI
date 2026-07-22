@@ -9,9 +9,11 @@ class OutputConfiguration {
   bool GetEnableScintillatorPhotonStudies() const {
     return fEnableScintillatorPhotonStudies;
   }
+  double GetScintillatorSizeMm() const { return fScintillatorSizeMm; }
 
  private:
   bool fEnableScintillatorPhotonStudies = false;
+  double fScintillatorSizeMm = 40.0;
 };
 
 #endif

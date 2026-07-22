@@ -10,9 +10,10 @@
 int main(int argc, char** argv) {
   auto* runManager = G4RunManagerFactory::CreateRunManager();
 
-  runManager->SetUserInitialization(new DetectorConstruction());
-  runManager->SetUserInitialization(new PhysicsList());
   auto* outputConfiguration = new OutputConfiguration();
+  runManager->SetUserInitialization(new DetectorConstruction(
+      outputConfiguration->GetScintillatorSizeMm()));
+  runManager->SetUserInitialization(new PhysicsList());
   runManager->SetUserInitialization(
       new ActionInitialization(outputConfiguration));
 

@@ -105,6 +105,7 @@ void plot_event_observables(
   double primaryEnergyMeV = 0.0;
   double primaryHitXmm = 0.0;
   double primaryHitYmm = 0.0;
+  double tileSizeMm = 40.0;
   int scintillationPhotons = 0;
   int pmtIncidentPhotons = 0;
   double photoelectrons = 0.0;
@@ -118,6 +119,9 @@ void plot_event_observables(
   events->SetBranchAddress("primary_energy_mev", &primaryEnergyMeV);
   events->SetBranchAddress("primary_hit_x_mm", &primaryHitXmm);
   events->SetBranchAddress("primary_hit_y_mm", &primaryHitYmm);
+  if (events->GetBranch("tile_size_mm") != nullptr) {
+    events->SetBranchAddress("tile_size_mm", &tileSizeMm);
+  }
   events->SetBranchAddress("scintillation_photons", &scintillationPhotons);
   events->SetBranchAddress("pmt_incident_photons", &pmtIncidentPhotons);
   events->SetBranchAddress("pmt_charge_pc", &pmtChargePC);
@@ -130,6 +134,11 @@ void plot_event_observables(
                         kStoredArrivalPe[i]);
     events->SetBranchAddress(branchName, &arrivalTimesNs[i]);
   }
+  if (events->GetEntries() > 0) {
+    events->GetEntry(0);
+  }
+  const int positionBins = static_cast<int>(tileSizeMm);
+  const double tileHalfSizeMm = 0.5 * tileSizeMm;
 
   auto lightVsEnergy = std::make_unique<TH2D>(
       "light_vs_muon_energy",
@@ -154,11 +163,13 @@ void plot_event_observables(
   auto photonBirthMap = std::make_unique<TH2D>(
       "pmt_photon_birth_map",
       "Birth Positions of Photons Reaching Sensor;birth x [mm];birth y [mm]",
-      41, -20.5, 20.5, 41, -20.5, 20.5);
+      positionBins, -tileHalfSizeMm, tileHalfSizeMm, positionBins,
+      -tileHalfSizeMm, tileHalfSizeMm);
   auto muonHitMap = std::make_unique<TH2D>(
       "muon_hit_map",
       "Muon Hit Positions in Scintillator;hit x [mm];hit y [mm]",
-      41, -20.5, 20.5, 41, -20.5, 20.5);
+      positionBins, -tileHalfSizeMm, tileHalfSizeMm, positionBins,
+      -tileHalfSizeMm, tileHalfSizeMm);
 
   auto pmt_charge_pc_histogram = std::make_unique<TH1D>(
     "pmt_charge_pc_histogram",

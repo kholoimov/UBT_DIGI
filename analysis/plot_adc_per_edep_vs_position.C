@@ -5,6 +5,8 @@
 #include <TSystem.h>
 #include <TTree.h>
 
+#include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <string>
 
@@ -29,17 +31,30 @@ void plot_adc_per_edep_vs_position(
   double edepMeV = 0.0;
   double hitXmm = 0.0;
   double hitYmm = 0.0;
+  double tileSizeMm = 40.0;
   events->SetBranchAddress("event_id", &eventId);
   events->SetBranchAddress("edep_mev", &edepMeV);
   events->SetBranchAddress("primary_hit_x_mm", &hitXmm);
   events->SetBranchAddress("primary_hit_y_mm", &hitYmm);
   events->SetBranchAddress("adc_counts", &adcCounts);
+  if (events->GetBranch("tile_size_mm") != nullptr) {
+    events->SetBranchAddress("tile_size_mm", &tileSizeMm);
+  }
+
+  if (events->GetEntries() == 0) {
+    std::cerr << "The events tree is empty." << std::endl;
+    return;
+  }
+  events->GetEntry(0);
+  const int positionBins = static_cast<int>(tileSizeMm);
+  const double tileHalfSizeMm = 0.5 * tileSizeMm;
 
   TProfile2D adcPerEdep(
       "adc_per_edep_vs_position",
       "Energy-normalized ADC response;Primary hit x [mm];Primary hit y [mm];"
       "Mean ADC counts / E_{dep} [MeV]",
-      40, -20.0, 20.0, 40, -20.0, 20.0);
+      positionBins, -tileHalfSizeMm, tileHalfSizeMm, positionBins,
+      -tileHalfSizeMm, tileHalfSizeMm);
 
   Long64_t selectedEvents = 0;
   for (Long64_t entry = 0; entry < events->GetEntries(); ++entry) {
@@ -73,7 +88,22 @@ void plot_adc_per_edep_vs_position(
   adcPerEdep.Write();
   output.Close();
 
+  std::ofstream table(outputBase + ".csv");
+  table << "x_center_mm,y_center_mm,entries,mean_adc_per_mev,standard_error\n";
+  table << std::setprecision(10);
+  for (int xBin = 1; xBin <= adcPerEdep.GetNbinsX(); ++xBin) {
+    for (int yBin = 1; yBin <= adcPerEdep.GetNbinsY(); ++yBin) {
+      const int bin = adcPerEdep.GetBin(xBin, yBin);
+      table << adcPerEdep.GetXaxis()->GetBinCenter(xBin) << ','
+            << adcPerEdep.GetYaxis()->GetBinCenter(yBin) << ','
+            << adcPerEdep.GetBinEntries(bin) << ','
+            << adcPerEdep.GetBinContent(bin) << ','
+            << adcPerEdep.GetBinError(bin) << '\n';
+    }
+  }
+  table.close();
+
   std::cout << "Filled ADC/E_dep position map with " << selectedEvents
             << " physical events; output written to " << outputBase
-            << ".{root,png,pdf}" << std::endl;
+            << ".{root,png,pdf,csv}" << std::endl;
 }

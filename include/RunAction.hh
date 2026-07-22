@@ -8,7 +8,7 @@ class ScintillatorDigi;
 
 class RunAction : public G4UserRunAction {
  public:
-  explicit RunAction(bool enableScintillatorPhotonStudies);
+  RunAction(bool enableScintillatorPhotonStudies, double scintillatorSizeMm);
   ~RunAction() override;
 
   void BeginOfRunAction(const G4Run* run) override;
@@ -21,6 +21,7 @@ class RunAction : public G4UserRunAction {
 
  private:
   bool fEnableScintillatorPhotonStudies;
+  double fScintillatorSizeMm;
 };
 
 #endif
