@@ -488,15 +488,15 @@ photoelectron charge to ADC counts.  The radial plot exposes position-dependent
 light-collection effects caused by the small sensor footprint and optical
 transport.
 
-\IfFileExists{../analysis/plots/adc/adc_vs_edep.pdf}{%
+\IfFileExists{../analysis/plots/adc/adc_vs_edep.png}{%
 \begin{figure}[htb]
   \centering
   \subfigure[ADC counts versus deposited energy; the profile gives the mean
   response.]{%
-    \includegraphics[width=0.47\linewidth]{../analysis/plots/adc/adc_vs_edep.pdf}}
+    \includegraphics[width=0.47\linewidth]{../analysis/plots/adc/adc_vs_edep.png}}
   \hfill
   \subfigure[ADC counts versus transverse distance from the tile center.]{%
-    \includegraphics[width=0.47\linewidth]{../analysis/plots/adc/adc_vs_distance_from_center.pdf}}
+    \includegraphics[width=0.47\linewidth]{../analysis/plots/adc/adc_vs_distance_from_center.png}}
   \caption{ADC response as a function of deposited energy and radial hit
   position.}
   \label{fig:ubt-adc-energy}
@@ -530,15 +530,15 @@ The table therefore contains $20\times20$ rows for the small tile or
 $40\times40$ rows for the default tile, including explicitly reported empty
 bins.
 
-\IfFileExists{../analysis/plots/adc/mean_adc_vs_position.pdf}{%
+\IfFileExists{../analysis/plots/adc/mean_adc_vs_position.png}{%
 \begin{figure}[htb]
   \centering
   \subfigure[Mean ADC counts versus primary hit position.]{%
-    \includegraphics[width=0.47\linewidth]{../analysis/plots/adc/mean_adc_vs_position.pdf}}
+    \includegraphics[width=0.47\linewidth]{../analysis/plots/adc/mean_adc_vs_position.png}}
   \hfill
   \subfigure[Mean energy-normalized response $N_\mathrm{ADC}/E_\mathrm{dep}$
   versus primary hit position.]{%
-    \includegraphics[width=0.47\linewidth]{../analysis/plots/adc/adc_per_edep_vs_position.pdf}}
+    \includegraphics[width=0.47\linewidth]{../analysis/plots/adc/adc_per_edep_vs_position.png}}
   \caption{Spatial uniformity maps of the raw and energy-normalized ADC
   response across the scintillator tile.}
   \label{fig:ubt-adc-position}
