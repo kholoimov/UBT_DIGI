@@ -36,6 +36,9 @@ If position randomization is enabled, the initial $x$ and $y$ are sampled unifor
 x, y \in [-a, +a],
 \]
 where $a$ is the configurable half-size. Internally, the member variable is initialized to $20~\mathrm{mm}$, while the UI messenger default string is currently set to $15~\mathrm{mm}$. This is a convention inconsistency that should be cleaned up.
+The initialized member value controls execution unless a macro issues the UI
+command; all supplied production macros set the value explicitly, so their
+behavior does not depend on the messenger metadata default.
 For a uniformly illuminated $20\times20~\mathrm{mm^2}$ tile, $a$ must not
 exceed $10~\mathrm{mm}$.  The supplied \texttt{macros/run\_muons\_20mm.mac}
 uses this limit.  A representative invocation is
@@ -193,6 +196,10 @@ The trigger decision requires both:
 \item deposited energy above $0.20~\mathrm{MeV}$,
 \item PMT charge above $5~\mathrm{pC}$.
 \end{itemize}
+This is the trigger convention of the \emph{standalone} optical simulation.
+It must not be confused with the FairShip map-based digitizer described in
+Section~\ref{sec:fairship-integration}, where the configurable decision is
+$N_\mathrm{ADC}\geq100$.
 
 \subsection{Time Reference Conventions}
 Several different time references are used, and these are important:
@@ -223,6 +230,10 @@ memory.  Setting the flag to \texttt{true} when starting the executable enables 
 detailed photon output.  Aggregate event quantities such as deposited energy,
 photon counts, photoelectrons, charge, and ADC counts remain in
 \texttt{events} in either mode.
+Every physical and synthetic row also stores \texttt{tile\_size\_mm}.  Its
+value is 20 or 40 and records the geometry used to generate the file.  The
+spatial analysis macros use this column to select their binning and axis
+limits; for backward compatibility they assume 40 mm if the column is absent.
 
 \subsection{Special Rows in \texttt{events}}
 The \texttt{events} tree contains both physical events and synthetic summary rows:
@@ -393,18 +404,83 @@ Each digitized hit stores:
         \qquad \sigma_t=0.3~\mathrm{ns},
       \]
       where $t_0$ is the event time offset.
+\item an integer ADC count stored in both \texttt{GetADC()} and the inherited
+      \texttt{GetDigi()} field;
+\item a Boolean trigger decision available through \texttt{IsTriggered()} or
+      \texttt{GetTriggered()}.
 \end{itemize}
 
-No Gaussian spatial smearing is applied after the tile-center assignment.  At
-this stage the FairShip digitized hit does \emph{not} store deposited energy,
-photoelectron count, charge, ADC, trigger state, or a link to the originating
-Monte Carlo point.  The inherited generic \texttt{digi} scalar remains at its
-default value of zero.  Optical-photon transport, light-collection efficiency,
-PDE, gain, charge threshold, electronic noise, saturation, crosstalk, and
-afterpulsing from the standalone model are also not yet evaluated in FairShip.
-The current FairShip physics response is therefore limited to non-zero energy
-deposit detection, segmentation through the YAML map, exact constituent-tile
-center assignment, and Gaussian time resolution.
+No Gaussian spatial smearing is applied after the tile-center assignment.  The
+ADC conversion uses the standalone response maps installed as
+\texttt{geometry/UpstreamTagger_adc_response_20mm.csv} and
+\texttt{geometry/UpstreamTagger_adc_response_40mm.csv}.  These maps
+were produced with 5,000 standalone muon events for each tile size and the
+same $6\times6~\mathrm{mm^2}$ photosensor.  The detector-region YAML selects
+the constituent-tile side $s\in\{2,4\}~\mathrm{cm}$.  For an MC point, the
+digitizer calculates the local coordinates relative to the inferred tile
+center,
+\[
+  x_\mathrm{local}=x_\mathrm{MC}-x_\mathrm{tile},\qquad
+  y_\mathrm{local}=y_\mathrm{MC}-y_\mathrm{tile},
+\]
+and selects the nearest populated $1\times1~\mathrm{mm^2}$ response-map bin.
+Empty statistical bins use the nearest populated bin rather than being
+interpreted as zero response.  All 400 bins of the 20 mm map are populated.
+The 40 mm map has 1,526 populated bins out of 1,600; its 74 empty bins use the
+nearest populated response.  If the selected map value is
+$R_s(x,y)$ in ADC/MeV, the stored count is
+\[
+  N_\mathrm{ADC}=\mathrm{round}\left(
+    E_\mathrm{dep}[\mathrm{MeV}]\,
+    R_s(x_\mathrm{local},y_\mathrm{local})
+  \right).
+\]
+The FairRoot point stores energy loss in GeV; the implementation multiplies
+\texttt{GetEnergyLoss()} by 1,000 before applying the ADC/MeV response.  ADC is
+rounded to the nearest integer, clamped to be non-negative, and written to the
+inherited \texttt{GetDigi()} value.  \texttt{GetADC()} returns the same value
+as an integer.
+The hit is triggered when
+\[
+  N_\mathrm{ADC} \geq 100.
+\]
+The threshold is configured as
+\texttt{ShipGeo.UpstreamTagger.ADCTriggerThreshold}; its default value is
+100 counts.
+
+The FairShip hit still does not store deposited energy as a separate hit data
+member, photoelectron count, analog charge, or a
+direct link to the originating MC point.  Optical transport and sensor effects
+are not rerun during FairShip reconstruction; they enter through the precomputed
+position-dependent ADC/MeV maps.
+
+\subsection{Regenerating and installing the FairShip ADC maps}
+
+The committed calibration inputs are copies of the dedicated analysis CSVs.
+To regenerate them, produce separate 20 mm and 40 mm standalone ROOT files,
+then run \texttt{analysis/run\_general\_studies.sh} on each file with distinct
+\texttt{UBT\_ANALYSIS\_OUTPUT} directories.  From the FairShip repository root,
+install the resulting tables with
+\begin{verbatim}
+cp UBT_DIGI/analysis/plots_20mm/adc/adc_per_edep_vs_position.csv \
+   geometry/UpstreamTagger_adc_response_20mm.csv
+cp UBT_DIGI/analysis/plots/adc/adc_per_edep_vs_position.csv \
+   geometry/UpstreamTagger_adc_response_40mm.csv
+\end{verbatim}
+The 20 mm source must be generated with
+\texttt{UBT\_SCINTILLATOR\_SIZE\_MM=20}; the 40 mm source must use 40 or leave
+the variable unset.  In both cases the photon-level output flag may remain
+false because all quantities required for the response table are in the
+general event tree.  Keeping the same PMT size, material settings, optical
+model, beam definition, and event count is necessary for a controlled
+tile-size comparison.
+
+The response maps are loaded once when the FairShip
+\texttt{UpstreamTaggerDetector} digitizer is constructed.  Map selection is by
+the YAML constituent side: 2 cm selects the 20 mm table and 4 cm selects the
+40 mm table.  The present calculation is deterministic for fixed MC energy
+loss and position; it uses the map mean and does not sample the CSV standard
+error or an event-by-event gain fluctuation.
 
 \section{Analysis Plots}
 \label{sec:analysis-plots}
@@ -452,6 +528,26 @@ row per $1\times1~\mathrm{mm^2}$ bin (400 data rows for this geometry), with
 columns for the bin-center coordinates, entries, mean ADC/MeV, and standard
 error.  The analysis reads \texttt{tile\_size\_mm=20} from the ROOT tree, so no
 manual axis-range option is required.
+The two calibration copies installed in the FairShip geometry directory are
+the same CSV schema and are loaded at reconstruction startup.  Missing files,
+an invalid header, or a map without any populated bin produces an explicit
+error rather than silently applying a constant gain.
+
+For the corresponding 40 mm production, keep the default tile size and use
+the full beam spot:
+\begin{verbatim}
+mkdir -p output/40mm
+cd output/40mm
+UBT_SCINTILLATOR_SIZE_MM=40 \
+UBT_ENABLE_SCINTILLATOR_PHOTON_STUDIES=false \
+  ../../build/ubt_scintillator ../../macros/run_muons.mac
+cd ../..
+UBT_ROOT_OUTPUT="$PWD/output/40mm/scintillator_digi.root" \
+UBT_ANALYSIS_OUTPUT="$PWD/analysis/plots" \
+  analysis/run_general_studies.sh
+\end{verbatim}
+The two analysis output directories then provide the source tables for the
+FairShip calibration installation described above.
 
 The figures are included conditionally so that the technical note can still be
 compiled before a production analysis has been run.  If a figure is absent,
@@ -567,13 +663,16 @@ bins.
 \begin{figure}[htb]
   \centering
   \subfigure[Mean ADC counts versus primary hit position.]{%
-    \includegraphics[width=0.47\linewidth]{../analysis/plots/adc/mean_adc_vs_position.png}}
+    \includegraphics[width=0.31\linewidth]{../analysis/plots/adc/mean_adc_vs_position.png}}
   \hfill
-  \subfigure[Mean energy-normalized response $N_\mathrm{ADC}/E_\mathrm{dep}$
-  versus primary hit position.]{%
-    \includegraphics[width=0.47\linewidth]{../analysis/plots/adc/adc_per_edep_vs_position.png}}
-  \caption{Spatial uniformity maps of the raw and energy-normalized ADC
-  response across the scintillator tile.}
+  \subfigure[ADC/MeV map from the combined ADC study.]{%
+    \includegraphics[width=0.31\linewidth]{../analysis/plots/adc/mean_adc_per_mev_vs_position.png}}
+  \hfill
+  \subfigure[Independent ADC/MeV map that also exports the numerical CSV.]{%
+    \includegraphics[width=0.31\linewidth]{../analysis/plots/adc/adc_per_edep_vs_position.png}}
+  \caption{Spatial uniformity maps of the raw response and the two independent
+  energy-normalized calculations.  The two ADC/MeV panels provide a direct
+  cross-check of the dedicated CSV-producing analysis.}
   \label{fig:ubt-adc-position}
 \end{figure}
 }{%
@@ -611,11 +710,14 @@ $20\times20~\mathrm{mm^2}$ sample does not overwrite the default-tile results.
 \begin{figure}[htb]
   \centering
   \subfigure[Mean ADC counts across the small tile.]{%
-    \includegraphics[width=0.47\linewidth]{../analysis/plots_20mm/adc/mean_adc_vs_position.png}}
+    \includegraphics[width=0.31\linewidth]{../analysis/plots_20mm/adc/mean_adc_vs_position.png}}
+  \hfill
+  \subfigure[ADC/MeV map from the combined ADC study.]{%
+    \includegraphics[width=0.31\linewidth]{../analysis/plots_20mm/adc/mean_adc_per_mev_vs_position.png}}
   \hfill
   \subfigure[Dedicated ADC/MeV map used to produce the CSV table.]{%
-    \includegraphics[width=0.47\linewidth]{../analysis/plots_20mm/adc/adc_per_edep_vs_position.png}}
-  \caption{Raw and energy-normalized spatial ADC response for the
+    \includegraphics[width=0.31\linewidth]{../analysis/plots_20mm/adc/adc_per_edep_vs_position.png}}
+  \caption{Raw and independently calculated energy-normalized spatial ADC response for the
   $20\times20~\mathrm{mm^2}$ tile.  The displayed bin centers span
   $-9.5$ to $+9.5~\mathrm{mm}$ on each axis.}
   \label{fig:ubt-adc-position-20mm}
@@ -642,6 +744,15 @@ $20\times20~\mathrm{mm^2}$ sample does not overwrite the default-tile results.
 \item \textbf{No explicit host-to-dopant re-emission chain.} The present scintillator now uses an effective p-terphenyl + POPOP final emission spectrum, but it still does not simulate absorption by POPOP followed by delayed re-emission.
 \item \textbf{No explicit surface roughness study beyond one wrap model.} The interface finishes are fixed and not experimentally tuned.
 \item \textbf{Very simplified electronics.} Charge is proportional only to \(N_\mathrm{pe}\), with no single-photoelectron gain spread, noise, shaping, saturation, or baseline effects.
+\item \textbf{Mean-map FairShip response.} FairShip applies a deterministic
+position-bin mean in ADC/MeV.  It does not propagate the calibration-map
+standard error or reproduce standalone event-to-event optical fluctuations.
+\item \textbf{Nearest-neighbor interpolation.} FairShip uses the nearest
+populated 1 mm bin; no bilinear interpolation or edge-specific extrapolation
+model is currently applied.
+\item \textbf{No FairShip tile-hit merging.} Multiple Monte Carlo points in the
+same inferred tile produce separate digitized hits, so the 100-count threshold
+is evaluated per point rather than on a summed tile signal.
 \end{enumerate}
 
 \section{Most Useful Improvements}
@@ -658,6 +769,14 @@ The following upgrades would provide the largest gain in realism:
 \end{enumerate}
 
 \section{Summary}
-The present implementation is a useful intermediate model: it contains full Geant4 optical transport through a realistic small detector geometry, but it still uses a deliberately simplified sensor and electronics model. This makes it practical for timing studies and fast iteration, while also making clear where phenomenological tuning enters the chain.
+The standalone implementation is a useful intermediate model: it contains
+full Geant4 optical transport through a realistic small detector geometry, but
+it still uses a deliberately simplified sensor and electronics model.  Its
+20 mm and 40 mm studies provide position-dependent ADC/MeV calibrations for
+FairShip.  FairShip uses the coarse YAML regions for transport, returns the
+center of the inferred 2 cm or 4 cm constituent tile (which is not a separate
+FairShip geometry volume), converts each point's deposited energy with the
+corresponding local response map, and marks the resulting hit as triggered at
+100 ADC counts.
 
 For timing scans and geometry studies, the current model is already informative. For quantitative comparison to measured charge spectra, wavelength-shifted emission, or realistic SiPM response, additional work is still needed.

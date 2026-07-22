@@ -219,3 +219,5 @@ __marimo__/
 *.root
 *.pdf
 *.csv
+!analysis/plots/adc/adc_per_edep_vs_position.csv
+!analysis/plots_20mm/adc/adc_per_edep_vs_position.csv

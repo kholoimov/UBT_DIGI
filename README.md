@@ -18,6 +18,8 @@ and FairShip-integration descriptions are maintained in
 - optional row-per-photon ROOT output, disabled by default
 - multithreaded event processing and merged ROOT output
 - ROOT analysis macros for timing, event observables, and ADC response
+- FairShip digitization maps for position-dependent 20 and 40 mm tile
+  responses, with a default 100-ADC trigger threshold
 
 ## Repository layout
 
