@@ -397,6 +397,140 @@ The current FairShip physics response is therefore limited to non-zero energy
 deposit detection, segmentation through the YAML map, exact constituent-tile
 center assignment, and Gaussian time resolution.
 
+\section{Analysis Plots}
+\label{sec:analysis-plots}
+
+The plots in this section are produced from an existing
+\texttt{scintillator\_digi.root} by running
+\begin{verbatim}
+analysis/run_general_studies.sh
+\end{verbatim}
+from the \texttt{UBT\_DIGI} directory.  The driver performs analysis only; it
+does not start Geant4.  By default it writes general plots to
+\texttt{analysis/plots} and ADC-specific plots to
+\texttt{analysis/plots/adc}.  The input and output locations can be changed
+with \texttt{UBT\_ROOT\_OUTPUT} and \texttt{UBT\_ANALYSIS\_OUTPUT}.
+
+The figures are included conditionally so that the technical note can still be
+compiled before a production analysis has been run.  If a figure is absent,
+the corresponding placeholder states which analysis command must be executed.
+
+\subsection{Light production and photoelectron response}
+
+Figure~\ref{fig:ubt-light-response} summarizes the event-level optical chain.
+The first panel correlates primary muon energy with produced
+scintillation light, while the second compares detected photoelectrons with
+the number of produced scintillation photons.  These correlations provide a
+direct check of light-yield linearity and the combined transport and sensor
+acceptance.
+
+\IfFileExists{../analysis/plots/light_vs_muon_energy.pdf}{%
+\begin{figure}[htb]
+  \centering
+  \subfigure[Produced scintillation light versus primary muon energy.]{%
+    \includegraphics[width=0.47\linewidth]{../analysis/plots/light_vs_muon_energy.pdf}}
+  \hfill
+  \subfigure[Detected photoelectrons versus produced scintillation photons.]{%
+    \includegraphics[width=0.47\linewidth]{../analysis/plots/photoelectrons_vs_scintillation_photons.pdf}}
+  \caption{Event-level light-production and photoelectron-response
+  correlations from the general-studies tree.}
+  \label{fig:ubt-light-response}
+\end{figure}
+}{%
+\phantomsection\label{fig:ubt-light-response}%
+\noindent\textit{Light-response plots are not present. Run
+\texttt{analysis/run\_general\_studies.sh} to create them.}
+}
+
+\subsection{Timing response}
+
+The event tree stores selected photoelectron arrival indices relative to the
+primary hit.  Figure~\ref{fig:ubt-timing-response} shows the spread and mean of
+the arrival-time difference as the required photoelectron index is increased.
+This is the relevant timing-versus-threshold tradeoff for the simplified
+digitizer.  These event-level timing plots do not require the optional
+row-per-scintillation-photon trees.
+
+\IfFileExists{../analysis/plots/sigma_delta_arrival_time_vs_threshold.pdf}{%
+\begin{figure}[htb]
+  \centering
+  \subfigure[Standard deviation of the arrival-time difference versus
+  photoelectron threshold.]{%
+    \includegraphics[width=0.47\linewidth]{../analysis/plots/sigma_delta_arrival_time_vs_threshold.pdf}}
+  \hfill
+  \subfigure[Mean arrival-time difference versus photoelectron threshold.]{%
+    \includegraphics[width=0.47\linewidth]{../analysis/plots/mean_delta_arrival_time_vs_threshold.pdf}}
+  \caption{Threshold dependence of the event-level photoelectron timing
+  response.}
+  \label{fig:ubt-timing-response}
+\end{figure}
+}{%
+\phantomsection\label{fig:ubt-timing-response}%
+\noindent\textit{Timing-response plots are not present. Run
+\texttt{analysis/run\_general\_studies.sh} to create them.}
+}
+
+\subsection{ADC response versus deposited energy}
+
+Figure~\ref{fig:ubt-adc-energy} compares ADC counts with deposited energy and
+with distance from the tile center.  The energy correlation tests the complete
+conversion from energy deposition through optical transport and
+photoelectron charge to ADC counts.  The radial plot exposes position-dependent
+light-collection effects caused by the small sensor footprint and optical
+transport.
+
+\IfFileExists{../analysis/plots/adc/adc_vs_edep.pdf}{%
+\begin{figure}[htb]
+  \centering
+  \subfigure[ADC counts versus deposited energy; the profile gives the mean
+  response.]{%
+    \includegraphics[width=0.47\linewidth]{../analysis/plots/adc/adc_vs_edep.pdf}}
+  \hfill
+  \subfigure[ADC counts versus transverse distance from the tile center.]{%
+    \includegraphics[width=0.47\linewidth]{../analysis/plots/adc/adc_vs_distance_from_center.pdf}}
+  \caption{ADC response as a function of deposited energy and radial hit
+  position.}
+  \label{fig:ubt-adc-energy}
+\end{figure}
+}{%
+\phantomsection\label{fig:ubt-adc-energy}%
+\noindent\textit{ADC energy-response plots are not present. Run
+\texttt{analysis/run\_general\_studies.sh} to create them.}
+}
+
+\subsection{Spatial uniformity of the ADC response}
+
+The color maps in Figure~\ref{fig:ubt-adc-position} use the primary hit
+position in the $40\times40~\mathrm{mm^2}$ tile.  The raw mean ADC map combines
+energy-deposition fluctuations with position-dependent collection.  Dividing
+event by event by $E_\mathrm{dep}$ isolates the mean digitized response per unit
+deposited energy,
+\[
+  R_\mathrm{ADC}(x,y)=
+  \left\langle\frac{N_\mathrm{ADC}}{E_\mathrm{dep}[\mathrm{MeV}]}\right\rangle_{x,y}.
+\]
+Empty bins indicate regions without selected positive-energy events and should
+not be interpreted as zero detector response.
+
+\IfFileExists{../analysis/plots/adc/mean_adc_vs_position.pdf}{%
+\begin{figure}[htb]
+  \centering
+  \subfigure[Mean ADC counts versus primary hit position.]{%
+    \includegraphics[width=0.47\linewidth]{../analysis/plots/adc/mean_adc_vs_position.pdf}}
+  \hfill
+  \subfigure[Mean energy-normalized response $N_\mathrm{ADC}/E_\mathrm{dep}$
+  versus primary hit position.]{%
+    \includegraphics[width=0.47\linewidth]{../analysis/plots/adc/adc_per_edep_vs_position.pdf}}
+  \caption{Spatial uniformity maps of the raw and energy-normalized ADC
+  response across the scintillator tile.}
+  \label{fig:ubt-adc-position}
+\end{figure}
+}{%
+\phantomsection\label{fig:ubt-adc-position}%
+\noindent\textit{ADC position maps are not present. Run
+\texttt{analysis/run\_general\_studies.sh} to create them.}
+}
+
 \section{Advantages of the Current Implementation}
 \begin{enumerate}[label=\arabic*.]
 \item \textbf{Simple and transparent geometry.} The model is easy to read and modify.
