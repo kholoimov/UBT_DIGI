@@ -1,5 +1,6 @@
 #include <TCanvas.h>
 #include <TFile.h>
+#include <TH1D.h>
 #include <TH2D.h>
 #include <TProfile.h>
 #include <TProfile2D.h>
@@ -87,6 +88,9 @@ void study_adc_vs_edep_position(
       "adc_vs_edep",
       "ADC response versus deposited energy;Deposited energy [MeV];ADC counts",
       100, 0.0, edepLimit, 100, 0.0, adcLimit);
+  TH1D adcCountsDistribution(
+      "adc_counts_distribution",
+      "ADC-count distribution;ADC counts;Events", 100, 0.0, adcLimit);
   TProfile meanAdcVsEdep("mean_adc_vs_edep",
                          "Mean ADC response versus deposited energy;Deposited "
                          "energy [MeV];Mean ADC counts",
@@ -111,6 +115,7 @@ void study_adc_vs_edep_position(
   for (const auto& record : records) {
     const double radiusMm = std::hypot(record.xMm, record.yMm);
     adcVsEdep.Fill(record.edepMeV, record.adcCounts);
+    adcCountsDistribution.Fill(record.adcCounts);
     meanAdcVsEdep.Fill(record.edepMeV, record.adcCounts);
     meanAdcVsPosition.Fill(record.xMm, record.yMm, record.adcCounts);
     if (record.edepMeV > 0.0) {
@@ -122,6 +127,14 @@ void study_adc_vs_edep_position(
 
   gStyle->SetOptStat(0);
   const std::string outputDir(outputDirectory);
+  {
+    TCanvas canvas("c_adc_counts_distribution", "ADC-count distribution", 1000,
+                   800);
+    adcCountsDistribution.SetLineColor(kBlue + 2);
+    adcCountsDistribution.SetLineWidth(3);
+    adcCountsDistribution.Draw("HIST");
+    SaveCanvas(canvas, outputDir, "adc_counts_distribution");
+  }
   {
     TCanvas canvas("c_adc_vs_edep", "ADC vs deposited energy", 1000, 800);
     adcVsEdep.Draw("COLZ");
@@ -150,6 +163,7 @@ void study_adc_vs_edep_position(
 
   TFile output((outputDir + "/adc_vs_edep_position.root").c_str(), "RECREATE");
   adcVsEdep.Write();
+  adcCountsDistribution.Write();
   meanAdcVsEdep.Write();
   meanAdcVsPosition.Write();
   meanAdcPerMeVVsPosition.Write();

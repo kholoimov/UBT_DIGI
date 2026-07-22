@@ -144,6 +144,46 @@ The total scintillation yield is set to
 
 Finite rise time is enabled in the optical physics configuration. The same rise time is assigned to both scintillation components.
 
+These constants are obtained from the measured timing spectrum stored in
+\texttt{analysis/input/fit\_scintillation\_input\_default.dat}.  The fitting
+macro imports the 1,915-bin data slice beginning at input offset 1,915 and maps
+it onto the interval 100--200~ns.  It estimates the pulse onset from the first
+bin exceeding the sideband background by 5\% of the peak height.  The fit starts
+0.8~ns before that onset and ends at 200~ns.  For the committed default data the
+selected fitting and plotting interval is 116.197--200~ns.
+
+Figure~\ref{fig:ubt-measured-timing-model} uses precisely this interval in both
+panels.  The left panel shows the measured spectrum without replacing it by a
+parametric curve.  For the right panel, one million times are generated from
+the fitted common-rise, fast-decay, and slow-decay components with a fixed
+random seed.  The fitted constant background is excluded from the generated
+physics distribution.  Measured and generated histograms are normalized over
+the common fit interval before comparison, so the overlay tests the timing
+shape rather than the total recorded yield.
+
+\IfFileExists{../analysis/scintillation_real_data.pdf}{%
+\begin{figure}[htb]
+  \centering
+  \subfigure[Measured timing spectrum over the interval used by the fit.]{%
+    \includegraphics[width=0.47\linewidth]{../analysis/scintillation_real_data.pdf}}
+  \hfill
+  \subfigure[Normalized measured spectrum compared with times generated from
+  the fitted two-component model.]{%
+    \includegraphics[width=0.47\linewidth]{../analysis/scintillation_real_vs_generated.pdf}}
+  \caption{Measured scintillation timing data and validation of the generated
+  timing model. Both panels use exactly the interval selected by the fitting
+  procedure.}
+  \label{fig:ubt-measured-timing-model}
+\end{figure}
+}{%
+\phantomsection\label{fig:ubt-measured-timing-model}%
+\noindent\textit{Measured timing-model plots are not present. From the
+\texttt{UBT\_DIGI} directory, run
+\texttt{root -l -b -q
+'analysis/fit\_scintillation.C("analysis/input/fit\_scintillation\_input\_default.dat")'}
+to create them.}
+}
+
 \section{Photon Detection Model}
 \subsection{Boundary-Level Convention}
 The PMT / SiPM sensitive detector acts only on optical photons crossing into the photocathode volume at a geometric boundary. This means the code does not simulate avalanche formation or analog waveform development. Instead, it applies two Bernoulli filters:
@@ -508,6 +548,38 @@ $20\times20~\mathrm{mm^2}$ sample does not overwrite the default-tile results.
 \phantomsection\label{fig:ubt-adc-position-20mm}%
 \noindent\textit{The 20 mm ADC position maps are not present. Run the complete
 20 mm workflow given above to create them.}
+}
+
+\subsection{ADC-count distributions for both tile sizes}
+
+Figure~\ref{fig:ubt-adc-count-distributions} compares the complete event-level
+ADC-count distributions for the two scintillator geometries. Each selected
+event contributes its stored \texttt{adc\_counts} value once. The histograms
+therefore include the combined effects of deposited-energy fluctuations, hit
+position, photon transport, and sensor conversion in the standalone
+simulation. Their horizontal ranges are chosen independently from the largest
+ADC value in each sample; consequently the comparison should use both the axis
+scale and the distribution shape rather than bin number alone.
+
+\IfFileExists{../analysis/plots_20mm/adc/adc_counts_distribution.pdf}{%
+\begin{figure}[htb]
+  \centering
+  \subfigure[$40\times40~\mathrm{mm^2}$ scintillator tile.]{%
+    \includegraphics[width=0.47\linewidth]{../analysis/plots/adc/adc_counts_distribution.pdf}}
+  \hfill
+  \subfigure[$20\times20~\mathrm{mm^2}$ scintillator tile.]{%
+    \includegraphics[width=0.47\linewidth]{../analysis/plots_20mm/adc/adc_counts_distribution.pdf}}
+  \caption{Event-level ADC-count distributions for the two tile sizes. Both
+  panels are produced by the same analysis macro from their corresponding ROOT
+  event trees.}
+  \label{fig:ubt-adc-count-distributions}
+\end{figure}
+}{%
+\phantomsection\label{fig:ubt-adc-count-distributions}%
+\noindent\textit{The paired ADC-count distributions are not present. Run
+\texttt{analysis/run\_general\_studies.sh} separately for the 40 mm and 20 mm
+ROOT samples using \texttt{UBT\_ANALYSIS\_OUTPUT=analysis/plots} and
+\texttt{UBT\_ANALYSIS\_OUTPUT=analysis/plots\_20mm}, respectively.}
 }
 
 \section{Integration in FairShip}

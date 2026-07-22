@@ -16,12 +16,14 @@
 #include <TLegend.h>
 #include <TLatex.h>
 #include <TMath.h>
+#include <TRandom3.h>
 #include <TStyle.h>
 
 #include <algorithm>
 #include <cmath>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -463,6 +465,81 @@ void fit_scintillation(const char* inputPath = "analysis/input/fit_scintillation
     label.DrawLatex(x_label_position, y_label_top_position - y_label_step_value * 5, Form("slow yield = %.3f", slowFraction));
 
     canvas->SaveAs("analysis/scintillation_fit.pdf");
+
+    // Use exactly the interval selected for the fit for the data-only and
+    // data-versus-generated timing plots.
+    std::unique_ptr<TH1F> measuredSpectrum(
+        static_cast<TH1F*>(hist_dnl_inl__1->Clone("measured_timing_spectrum")));
+    measuredSpectrum->SetDirectory(nullptr);
+    measuredSpectrum->GetXaxis()->SetRangeUser(fitMinimum, fitMaximum);
+    measuredSpectrum->SetTitle(
+        "Measured scintillation timing;Time [ns];Counts");
+
+    TCanvas measuredCanvas("measured_timing_canvas", "Measured timing", 1200,
+                           800);
+    measuredCanvas.SetLogy();
+    measuredSpectrum->SetMinimum(1.0);
+    measuredSpectrum->Draw("E");
+    measuredCanvas.SaveAs("analysis/scintillation_real_data.pdf");
+
+    TF1 generatedTimingPdf("generated_timing_pdf", ScintillationCommonRise,
+                           fitMinimum, fitMaximum, 7);
+    generatedTimingPdf.SetParameters(fitFunction->GetParameters());
+    generatedTimingPdf.SetParameter(6, 0.0);
+
+    std::unique_ptr<TH1F> generatedSpectrum(static_cast<TH1F*>(
+        measuredSpectrum->Clone("generated_timing_spectrum")));
+    generatedSpectrum->Reset("ICES");
+    generatedSpectrum->SetDirectory(nullptr);
+    generatedSpectrum->SetTitle(
+        "Measured and generated scintillation timing;Time [ns];Normalized "
+        "entries");
+
+    constexpr int kGeneratedSamples = 1000000;
+    TRandom3 timingRandom(12345);
+    for (int sample = 0; sample < kGeneratedSamples; ++sample) {
+        generatedSpectrum->Fill(
+            generatedTimingPdf.GetRandom(fitMinimum, fitMaximum, &timingRandom));
+    }
+
+    const int fitFirstBin = measuredSpectrum->FindBin(fitMinimum);
+    const int fitLastBin = measuredSpectrum->FindBin(fitMaximum);
+    const double measuredIntegral =
+        measuredSpectrum->Integral(fitFirstBin, fitLastBin);
+    const double generatedIntegral =
+        generatedSpectrum->Integral(fitFirstBin, fitLastBin);
+    if (measuredIntegral > 0.0) {
+        measuredSpectrum->Scale(1.0 / measuredIntegral);
+    }
+    if (generatedIntegral > 0.0) {
+        generatedSpectrum->Scale(1.0 / generatedIntegral);
+    }
+
+    TCanvas comparisonCanvas("timing_comparison_canvas",
+                             "Measured and generated timing", 1200, 800);
+    comparisonCanvas.SetLogy();
+    measuredSpectrum->SetMinimum(1e-7);
+    measuredSpectrum->SetMaximum(
+        2.0 * std::max(measuredSpectrum->GetMaximum(),
+                       generatedSpectrum->GetMaximum()));
+    measuredSpectrum->SetMarkerStyle(20);
+    measuredSpectrum->SetMarkerSize(0.45);
+    measuredSpectrum->SetMarkerColor(kBlack);
+    measuredSpectrum->SetLineColor(kBlack);
+    generatedSpectrum->SetLineColor(kRed + 1);
+    generatedSpectrum->SetLineWidth(3);
+    measuredSpectrum->Draw("E");
+    generatedSpectrum->Draw("HIST SAME");
+
+    TLegend comparisonLegend(0.58, 0.76, 0.88, 0.88);
+    comparisonLegend.SetBorderSize(0);
+    comparisonLegend.SetFillStyle(0);
+    comparisonLegend.AddEntry(measuredSpectrum.get(), "Measured data", "lep");
+    comparisonLegend.AddEntry(generatedSpectrum.get(),
+                              "Generated fitted timing model", "l");
+    comparisonLegend.Draw();
+    comparisonCanvas.SaveAs(
+        "analysis/scintillation_real_vs_generated.pdf");
 
     TFile outputFile("analysis/scintillation_fit.root", "RECREATE");
     hist_dnl_inl__1->Write();
