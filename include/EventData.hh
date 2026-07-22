@@ -10,6 +10,7 @@ class EventData {
   static EventData& Instance();
 
   void Reset();
+  void SetEnableScintillatorPhotonStudies(bool enabled);
   void SetPrimaryParticle(const std::string& name);
   void SetPrimaryKineticEnergy(double energy);
   void SetPrimaryMomentum(double momentum);
@@ -61,6 +62,7 @@ class EventData {
   double fFirstPmtHitTime = -1.0;
   std::vector<std::array<double, 5>> fPmtIncidentPhotonRecords;
   std::vector<double> fPmtPhotoelectronTimes;
+  bool fEnableScintillatorPhotonStudies = false;
 };
 
 #endif

@@ -25,6 +25,10 @@ void EventData::Reset() {
   fPmtPhotoelectronTimes.clear();
 }
 
+void EventData::SetEnableScintillatorPhotonStudies(bool enabled) {
+  fEnableScintillatorPhotonStudies = enabled;
+}
+
 void EventData::SetPrimaryParticle(const std::string& name) {
   fPrimaryParticle = name;
 }
@@ -59,7 +63,9 @@ void EventData::AddScintillationPhotons(int count) {
 }
 
 void EventData::AddScintillationPhotonTime(double time) {
-  fScintillationPhotonTimes.push_back(time);
+  if (fEnableScintillatorPhotonStudies) {
+    fScintillationPhotonTimes.push_back(time);
+  }
 }
 
 void EventData::AddPrimaryMuonTrackLength(double length) {
@@ -70,8 +76,10 @@ void EventData::AddPmtIncidentPhoton(double arrivalTime, double birthTime,
                                      double birthX, double birthY,
                                      double birthZ) {
   ++fPmtIncidentPhotons;
-  fPmtIncidentPhotonRecords.push_back(
-      {birthX, birthY, birthZ, birthTime, arrivalTime});
+  if (fEnableScintillatorPhotonStudies) {
+    fPmtIncidentPhotonRecords.push_back(
+        {birthX, birthY, birthZ, birthTime, arrivalTime});
+  }
   if (fFirstPmtHitTime < 0.0 || arrivalTime < fFirstPmtHitTime) {
     fFirstPmtHitTime = arrivalTime;
   }
@@ -86,7 +94,9 @@ const std::string& EventData::GetPrimaryParticle() const {
   return fPrimaryParticle;
 }
 
-double EventData::GetPrimaryKineticEnergy() const { return fPrimaryKineticEnergy; }
+double EventData::GetPrimaryKineticEnergy() const {
+  return fPrimaryKineticEnergy;
+}
 
 double EventData::GetPrimaryMomentum() const { return fPrimaryMomentum; }
 

@@ -8,13 +8,19 @@ class ScintillatorDigi;
 
 class RunAction : public G4UserRunAction {
  public:
-  RunAction();
+  explicit RunAction(bool enableScintillatorPhotonStudies);
   ~RunAction() override;
 
   void BeginOfRunAction(const G4Run* run) override;
   void EndOfRunAction(const G4Run* run) override;
 
   void RecordDigi(const ScintillatorDigi& digi);
+  bool GetEnableScintillatorPhotonStudies() const {
+    return fEnableScintillatorPhotonStudies;
+  }
+
+ private:
+  bool fEnableScintillatorPhotonStudies;
 };
 
 #endif

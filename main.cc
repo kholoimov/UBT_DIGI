@@ -1,18 +1,20 @@
 #include "ActionInitialization.hh"
 #include "DetectorConstruction.hh"
-#include "PhysicsList.hh"
-
 #include "G4RunManagerFactory.hh"
 #include "G4UIExecutive.hh"
 #include "G4UImanager.hh"
 #include "G4VisExecutive.hh"
+#include "OutputConfiguration.hh"
+#include "PhysicsList.hh"
 
 int main(int argc, char** argv) {
   auto* runManager = G4RunManagerFactory::CreateRunManager();
 
   runManager->SetUserInitialization(new DetectorConstruction());
   runManager->SetUserInitialization(new PhysicsList());
-  runManager->SetUserInitialization(new ActionInitialization());
+  auto* outputConfiguration = new OutputConfiguration();
+  runManager->SetUserInitialization(
+      new ActionInitialization(outputConfiguration));
 
   auto* visManager = new G4VisExecutive();
   visManager->Initialize();
@@ -32,5 +34,6 @@ int main(int argc, char** argv) {
 
   delete visManager;
   delete runManager;
+  delete outputConfiguration;
   return 0;
 }

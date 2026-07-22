@@ -204,6 +204,17 @@ The code writes three ntuples:
 \item \texttt{scintillation\_photon\_birth\_times}.
 \end{enumerate}
 
+The \texttt{events} tree is the general-studies output and is always filled.
+The two row-per-photon trees, together with the photon timing histograms, are
+controlled by the environment flag
+\texttt{UBT\_ENABLE\_SCINTILLATOR\_PHOTON\_STUDIES}.  This flag is
+\texttt{false} by default, in which case the photon-tree schemas exist but have
+zero rows and the corresponding per-photon vectors are not retained in event
+memory.  Setting the flag to \texttt{true} when starting the executable enables the
+detailed photon output.  Aggregate event quantities such as deposited energy,
+photon counts, photoelectrons, charge, and ADC counts remain in
+\texttt{events} in either mode.
+
 \subsection{Special Rows in \texttt{events}}
 The \texttt{events} tree contains both physical events and synthetic summary rows:
 \begin{itemize}
