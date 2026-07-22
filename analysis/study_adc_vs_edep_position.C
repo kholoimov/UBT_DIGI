@@ -44,13 +44,11 @@ void study_adc_vs_edep_position(
     return;
   }
 
-  int eventId = -1;
   int adcCounts = 0;
   double edepMeV = 0.0;
   double hitXmm = 0.0;
   double hitYmm = 0.0;
   double tileSizeMm = 40.0;
-  events->SetBranchAddress("event_id", &eventId);
   events->SetBranchAddress("edep_mev", &edepMeV);
   events->SetBranchAddress("primary_hit_x_mm", &hitXmm);
   events->SetBranchAddress("primary_hit_y_mm", &hitYmm);
@@ -65,7 +63,7 @@ void study_adc_vs_edep_position(
   int maximumAdcCounts = 0;
   for (Long64_t entry = 0; entry < events->GetEntries(); ++entry) {
     events->GetEntry(entry);
-    if (eventId < 0 || edepMeV < 0.0 || adcCounts < 0) {
+    if (edepMeV < 0.0 || adcCounts < 0) {
       continue;
     }
     records.push_back({edepMeV, hitXmm, hitYmm, adcCounts});

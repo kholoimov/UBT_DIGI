@@ -220,7 +220,8 @@ The code writes three ntuples:
 \item \texttt{scintillation\_photon\_birth\_times}.
 \end{enumerate}
 
-The \texttt{events} tree is the general-studies output and is always filled.
+The \texttt{events} tree is the general-studies output and contains exactly one
+row per simulated physical event.
 The two row-per-photon trees, together with the photon timing histograms, are
 controlled by the environment flag
 \texttt{UBT\_ENABLE\_SCINTILLATOR\_PHOTON\_STUDIES}.  This flag is
@@ -230,19 +231,10 @@ memory.  Setting the flag to \texttt{true} when starting the executable enables 
 detailed photon output.  Aggregate event quantities such as deposited energy,
 photon counts, photoelectrons, charge, and ADC counts remain in
 \texttt{events} in either mode.
-Every physical and synthetic row also stores \texttt{tile\_size\_mm}.  Its
+Every physical event row also stores \texttt{tile\_size\_mm}.  Its
 value is 20 or 40 and records the geometry used to generate the file.  The
 spatial analysis macros use this column to select their binning and axis
 limits; for backward compatibility they assume 40 mm if the column is absent.
-
-\subsection{Special Rows in \texttt{events}}
-The \texttt{events} tree contains both physical events and synthetic summary rows:
-\begin{itemize}
-\item \texttt{event\_id = -1}, \texttt{primary\_particle = "RUN\_SUMMARY"},
-\item \texttt{event\_id = -2}, \texttt{primary\_particle = "THRESHOLD\_SCAN"}.
-\end{itemize}
-
-This is convenient for quick downstream analysis, but it mixes different semantic object types inside one tree. Analyses must explicitly filter these rows.
 
 \subsection{Stored Arrival-Time Columns}
 The event tree stores photoelectron arrival times from the muon-hit reference for the following PE indices:
@@ -285,63 +277,63 @@ does not start Geant4.  By default it writes general plots to
 \texttt{analysis/plots/adc}.  The input and output locations can be changed
 with \texttt{UBT\_ROOT\_OUTPUT} and \texttt{UBT\_ANALYSIS\_OUTPUT}.
 
-\subsection{Complete $20\times20~\mathrm{mm^2}$ analysis workflow}
+% \subsection{Complete $20\times20~\mathrm{mm^2}$ analysis workflow}
 
-The simulation and analysis are deliberately separate: the general-studies
-driver never starts Geant4.  From the \texttt{UBT\_DIGI} directory, first
-create a dedicated output directory and generate the small-tile sample:
-\begin{verbatim}
-mkdir -p output/20mm
-cd output/20mm
-UBT_SCINTILLATOR_SIZE_MM=20 \
-UBT_ENABLE_SCINTILLATOR_PHOTON_STUDIES=false \
-  ../../build/ubt_scintillator ../../macros/run_muons_20mm.mac
-cd ../..
-\end{verbatim}
-The small-tile macro limits the randomized beam coordinates to
-$-10\leq x,y\leq10~\mathrm{mm}$, matching the physical tile.  The application
-writes \texttt{output/20mm/scintillator\_digi.root}; a shutdown segmentation
-fault is harmless for this workflow only when the log has already reported
-that this ROOT file was written and closed.
+% The simulation and analysis are deliberately separate: the general-studies
+% driver never starts Geant4.  From the \texttt{UBT\_DIGI} directory, first
+% create a dedicated output directory and generate the small-tile sample:
+% \begin{verbatim}
+% mkdir -p output/20mm
+% cd output/20mm
+% UBT_SCINTILLATOR_SIZE_MM=20 \
+% UBT_ENABLE_SCINTILLATOR_PHOTON_STUDIES=false \
+%   ../../build/ubt_scintillator ../../macros/run_muons_20mm.mac
+% cd ../..
+% \end{verbatim}
+% The small-tile macro limits the randomized beam coordinates to
+% $-10\leq x,y\leq10~\mathrm{mm}$, matching the physical tile.  The application
+% writes \texttt{output/20mm/scintillator\_digi.root}; a shutdown segmentation
+% fault is harmless for this workflow only when the log has already reported
+% that this ROOT file was written and closed.
 
-Run the complete analysis-only chain with a separate output location:
-\begin{verbatim}
-UBT_ROOT_OUTPUT="$PWD/output/20mm/scintillator_digi.root" \
-UBT_ANALYSIS_OUTPUT="$PWD/analysis/plots_20mm" \
-  analysis/run_general_studies.sh
-\end{verbatim}
-This runs the event-observable, ADC-versus-energy/position, and ADC/MeV spatial
-analyses.  In particular, the numerical response table is retained as
-\texttt{analysis/plots\_20mm/adc/adc\_per\_edep\_vs\_position.csv}.  It has one
-row per $1\times1~\mathrm{mm^2}$ bin (400 data rows for this geometry), with
-columns for the bin-center coordinates, entries, mean ADC/MeV, and standard
-error.  The analysis reads \texttt{tile\_size\_mm=20} from the ROOT tree, so no
-manual axis-range option is required.
-The two calibration copies installed in the FairShip geometry directory are
-the same CSV schema and are loaded at reconstruction startup.  Missing files,
-an invalid header, or a map without any populated bin produces an explicit
-error rather than silently applying a constant gain.
+% Run the complete analysis-only chain with a separate output location:
+% \begin{verbatim}
+% UBT_ROOT_OUTPUT="$PWD/output/20mm/scintillator_digi.root" \
+% UBT_ANALYSIS_OUTPUT="$PWD/analysis/plots_20mm" \
+%   analysis/run_general_studies.sh
+% \end{verbatim}
+% This runs the event-observable, ADC-versus-energy/position, and ADC/MeV spatial
+% analyses.  In particular, the numerical response table is retained as
+% \texttt{analysis/plots\_20mm/adc/adc\_per\_edep\_vs\_position.csv}.  It has one
+% row per $1\times1~\mathrm{mm^2}$ bin (400 data rows for this geometry), with
+% columns for the bin-center coordinates, entries, mean ADC/MeV, and standard
+% error.  The analysis reads \texttt{tile\_size\_mm=20} from the ROOT tree, so no
+% manual axis-range option is required.
+% The two calibration copies installed in the FairShip geometry directory are
+% the same CSV schema and are loaded at reconstruction startup.  Missing files,
+% an invalid header, or a map without any populated bin produces an explicit
+% error rather than silently applying a constant gain.
 
-For the corresponding 40 mm production, keep the default tile size and use
-the full beam spot:
-\begin{verbatim}
-mkdir -p output/40mm
-cd output/40mm
-UBT_SCINTILLATOR_SIZE_MM=40 \
-UBT_ENABLE_SCINTILLATOR_PHOTON_STUDIES=false \
-  ../../build/ubt_scintillator ../../macros/run_muons.mac
-cd ../..
-UBT_ROOT_OUTPUT="$PWD/output/40mm/scintillator_digi.root" \
-UBT_ANALYSIS_OUTPUT="$PWD/analysis/plots" \
-  analysis/run_general_studies.sh
-\end{verbatim}
-The two analysis output directories then provide the source tables for the
-FairShip calibration installation described in
-Section~\ref{sec:fairship-integration} below.
+% For the corresponding 40 mm production, keep the default tile size and use
+% the full beam spot:
+% \begin{verbatim}
+% mkdir -p output/40mm
+% cd output/40mm
+% UBT_SCINTILLATOR_SIZE_MM=40 \
+% UBT_ENABLE_SCINTILLATOR_PHOTON_STUDIES=false \
+%   ../../build/ubt_scintillator ../../macros/run_muons.mac
+% cd ../..
+% UBT_ROOT_OUTPUT="$PWD/output/40mm/scintillator_digi.root" \
+% UBT_ANALYSIS_OUTPUT="$PWD/analysis/plots" \
+%   analysis/run_general_studies.sh
+% \end{verbatim}
+% The two analysis output directories then provide the source tables for the
+% FairShip calibration installation described in
+% Section~\ref{sec:fairship-integration} below.
 
-The figures are included conditionally so that the technical note can still be
-compiled before a production analysis has been run.  If a figure is absent,
-the corresponding placeholder states which analysis command must be executed.
+% The figures are included conditionally so that the technical note can still be
+% compiled before a production analysis has been run.  If a figure is absent,
+% the corresponding placeholder states which analysis command must be executed.
 
 \subsection{Light production and photoelectron response}
 
@@ -784,7 +776,6 @@ The following upgrades would provide the largest gain in realism:
 \item Replace the constant PDE with a wavelength-dependent PDE curve for the actual SiPM model.
 \item Remove or reinterpret the extra \(\epsilon_\mathrm{LC}\) Bernoulli cut so that geometry and phenomenological losses are not counted ambiguously.
 \item Introduce gain fluctuations, dark counts, and optionally waveform-level digitization if charge-width comparisons are important.
-\item Separate event rows and run-summary rows into different trees or metadata objects.
 \item Harmonize variable names, especially threshold-related naming.
 \item Make the muon beam-spot default value consistent between the internal variable and the UI default string.
 \end{enumerate}
