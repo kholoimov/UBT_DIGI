@@ -240,6 +240,152 @@ Internally these records are stored as
 \{x, y, z, t_\mathrm{birth}, t_\mathrm{arrival}\}.
 \]
 
+\section{Integration in FairShip}
+\label{sec:fairship-integration}
+
+The standalone optical simulation described above is used to motivate the
+detector response, but it is not run inside the present FairShip simulation.
+The FairShip implementation deliberately separates a coarse transport geometry
+from a finer, implicit digitization geometry.  This distinction is important:
+the small tiles used to assign digitized coordinates are not individual
+Geant4/FairRoot volumes.
+
+\subsection{Detector map and transport geometry}
+
+The common detector map is installed in FairShip as
+\texttt{geometry/UpstreamTagger\_config.yaml}.  It is a compact, lossless form
+of \texttt{UBT\_DIGI/geometry/ubt\_geometry\_simulation.yaml}.  The active
+plane covers
+\[
+  -300~\mathrm{cm} \leq x < 300~\mathrm{cm}, \qquad
+  -300~\mathrm{cm} \leq y < 300~\mathrm{cm},
+\]
+and is divided into a $12\times12$ array of $50\times50~\mathrm{cm^2}$
+regions.  Region identifiers increase first from left to right and then from
+bottom to top,
+\[
+  D = 12r+c, \qquad r,c\in\{0,\ldots,11\}.
+\]
+Each region has one YAML attribute,
+\texttt{constituent\_tile\_size}, whose value is either 2 or 4 cm.  There are
+56 regions of the 2 cm type and 88 regions of the 4 cm type.  The mapped
+FairShip geometry creates these 144 coarse regions as sensitive
+$50\times50\times1~\mathrm{cm^3}$ p-terphenyl volumes.  Consequently, the
+detector identifier stored in an \texttt{UpstreamTaggerPoint} identifies a
+coarse region, not an individual small tile.
+
+Figure~\ref{fig:ubt-mapping} shows both representations.  The left-hand plot is
+the geometry physically used for FairShip particle transport and is the map
+that presently selects the digitization pitch.  The right-hand plot is the
+full-resolution reference layout from \texttt{ubt\_geometry\_digitization.yaml}.
+Blue denotes
+$4\times4~\mathrm{cm^2}$ tiles and green denotes
+$2\times2~\mathrm{cm^2}$ tiles.
+
+\begin{figure}[htb]
+  \centering
+  \subfigure[Coarse FairShip transport map: 144 sensitive regions of
+  $50\times50~\mathrm{cm^2}$.\label{fig:ubt-simulation-map}]{%
+    \includegraphics[width=0.47\linewidth]{../geometry/ubt_geometry_simulation.png}}
+  \hfill
+  \subfigure[Implicit constituent-tile map used to assign digitized hit
+  coordinates.\label{fig:ubt-digitization-map}]{%
+    \includegraphics[width=0.47\linewidth]{../geometry/ubt_geometry_digitization.png}}
+  \caption{Two levels of the UBT mapping.  Only the coarse regions in (a) are
+  physical FairShip geometry volumes.  The small tiles in (b) are reconstructed
+  mathematically during digitization; they are not FairShip geometry volumes.}
+  \label{fig:ubt-mapping}
+\end{figure}
+
+\subsection{Assignment of the constituent-tile center}
+
+For every Monte Carlo point, the region identifier $D$ is used to read the
+constituent pitch
+\[
+  s(D) \in \{2~\mathrm{cm},4~\mathrm{cm}\}
+\]
+from the YAML-derived lookup table.  The Monte Carlo position does not get
+replaced by the center of its $50\times50~\mathrm{cm^2}$ region.  Instead, it
+is quantized to the center of the corresponding implicit constituent tile.
+
+The constituent grids are aligned to the lower detector edge
+$o=-300~\mathrm{cm}$.  For either transverse coordinate $q\in\{x,y\}$, the
+tile index and digitized coordinate are
+\begin{align*}
+  i_q &= \left\lfloor\frac{q_\mathrm{MC}-o}{s(D)}\right\rfloor, \\
+  q_\mathrm{digi} &= o + \left(i_q+\frac{1}{2}\right)s(D).
+\end{align*}
+Coordinates at the upper external detector boundary are clamped into the last
+tile so that the returned center always remains inside the active plane.  The
+longitudinal digitized coordinate is the center of the UBT plane,
+\[
+  z_\mathrm{digi}=z_\mathrm{UBT}.
+\]
+
+As an example, consider a point with $x_\mathrm{MC}=-74.2~\mathrm{cm}$ in a
+region for which $s(D)=4~\mathrm{cm}$.  Its index and returned center are
+\begin{align*}
+  i_x &= \left\lfloor\frac{-74.2-(-300)}{4}\right\rfloor=56, \\
+  x_\mathrm{digi} &= -300+(56.5)\,4=-74~\mathrm{cm}.
+\end{align*}
+The same calculation is performed independently for $y$.  Thus the digitized
+position is the center of an implicit $2\times2$ or $4\times4~\mathrm{cm^2}$
+tile, even though only its parent 50 cm region is physically present in the
+transport geometry.
+
+The 50 cm simulation map is an approximation to the full-resolution layout.
+In particular, it places type transitions on 50 cm region boundaries, whereas
+the detailed reference layout moves some boundaries to multiples of 4 cm (for
+example, $\pm48~\mathrm{cm}$).  The present FairShip digitizer follows the
+\emph{coarse region type} as requested; it does not load the 48,600 individual
+entries of the detailed tile map.  Therefore, the right-hand panel in
+Figure~\ref{fig:ubt-mapping} documents the intended fine layout, while the
+left-hand panel is authoritative for pitch selection in the current FairShip
+implementation.
+
+\subsection{Physics information presently written by FairShip}
+
+The simulation output branch \texttt{UpstreamTaggerPoint} contains one Monte
+Carlo point whenever a track deposits non-zero energy while traversing
+a sensitive coarse region.  A point presently contains:
+\begin{itemize}
+\item event, track, and coarse-region detector identifiers;
+\item the mean of the entrance and exit positions;
+\item the momentum at entrance and the stored exit position and momentum;
+\item the global time at entrance, in ns;
+\item the track length at entrance, in cm;
+\item the energy deposited in the sensitive region;
+\item the particle PDG code.
+\end{itemize}
+
+The reconstruction output branch \texttt{Digi\_UpstreamTaggerHits} presently
+contains one \texttt{UpstreamTaggerHit} for every
+\texttt{UpstreamTaggerPoint}; hits in the same inferred tile are not yet merged.
+Each digitized hit stores:
+\begin{itemize}
+\item the same coarse-region detector identifier $D$;
+\item $(x_\mathrm{digi},y_\mathrm{digi},z_\mathrm{UBT})$, the center of the
+      inferred constituent tile;
+\item a digitized time
+      \[
+        t_\mathrm{digi}\sim
+        \mathcal{N}(t_\mathrm{MC}+t_0,\,\sigma_t),
+        \qquad \sigma_t=0.3~\mathrm{ns},
+      \]
+      where $t_0$ is the event time offset.
+\end{itemize}
+
+No Gaussian spatial smearing is applied after the tile-center assignment.  At
+this stage the FairShip digitized hit does \emph{not} store deposited energy,
+photoelectron count, charge, ADC, trigger state, or a link to the originating
+Monte Carlo point.  The inherited generic \texttt{digi} scalar remains at its
+default value of zero.  Optical-photon transport, light-collection efficiency,
+PDE, gain, charge threshold, electronic noise, saturation, crosstalk, and
+afterpulsing from the standalone model are also not yet evaluated in FairShip.
+The current FairShip physics response is therefore limited to non-zero energy
+deposit detection, segmentation through the YAML map, exact constituent-tile
+center assignment, and Gaussian time resolution.
+
 \section{Advantages of the Current Implementation}
 \begin{enumerate}[label=\arabic*.]
 \item \textbf{Simple and transparent geometry.} The model is easy to read and modify.
