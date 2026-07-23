@@ -1,5 +1,61 @@
 \section{Conclusions}
 \label{sec:conclusions}
 
-The conclusions of this note are the following.
+This work provides a connected simulation and digitization chain for the UBT,
+from a detailed standalone optical model to a computationally inexpensive
+FairShip response.  The standalone Geant4 application supports two
+configurable scintillator geometries: the \(40\times40\times10~\mathrm{mm^3}\)
+tile representing the \(4\times4~\mathrm{cm^2}\) constituent type and the
+\(20\times20\times5~\mathrm{mm^3}\) tile representing the
+\(2\times2~\mathrm{cm^2}\) type.  Both use the same
+\(6\times6~\mathrm{mm^2}\) photosensor, allowing the tile-size dependence of
+light collection and ADC response to be compared without changing the sensor
+acceptance.
+
+The standalone output records event-level energy deposition, scintillation
+yield, sensor photon counts, photoelectron counts, charge, ADC response, hit
+position, and selected photoelectron arrival times.  The accompanying
+analysis chain produces charge and light-yield distributions, response
+correlations, spatial color maps, and CSV tables of mean ADC/MeV in
+\(1\times1~\mathrm{mm^2}\) position bins.  These tables preserve the most
+important average position dependence of the optical calculation in a form
+that can be evaluated quickly during full FairShip production.  Separate maps
+are retained for the 20 mm and 40 mm tiles.
+
+In FairShip, a common YAML map defines 225 physical
+\(40\times40~\mathrm{cm^2}\) transport regions and specifies whether each
+region represents 2 cm or 4 cm constituent segmentation.  The final map has
+102 small-tile regions and 123 large-tile regions.  Its full-height green
+sides each contain three parent columns, while each side of the three-row
+central neck extends through two additional green columns; the innermost
+neck is a five-column blue core.  The constituent tiles themselves are not
+individual geometry volumes.  For every
+\texttt{UpstreamTaggerPoint}, digitization calculates the appropriate
+implicit tile center and returns that center as the reconstructed transverse
+position.  The original exact Monte Carlo position is retained long enough
+to calculate the local coordinates within the inferred tile.  FairShip then
+multiplies the deposited energy by the nearest populated ADC/MeV map value,
+stores the rounded ADC count, and marks the hit as triggered when the result
+is at least 100 counts.  This procedure captures the mean optical response
+without generating or transporting optical photons inside FairShip.
+
+The charge-response implementation and its calibration workflow are usable
+in their present simplified form, but several effects remain outside the
+model.  The sensor efficiency is wavelength independent, the electronics
+response omits gain fluctuations, noise, shaping, and saturation, and the
+FairShip map lookup is deterministic and uses nearest-neighbor position bins.
+Multiple points in one inferred tile are also digitized separately rather
+than merged before threshold evaluation.  These limitations should be
+considered when interpreting absolute ADC spectra or trigger efficiencies.
+
+The timing analysis requires particular caution.  Absolute photoelectron
+arrival times and first-photon-referenced threshold times are available as
+diagnostic studies, including Gaussian-fit timing resolutions.  However, the
+current simulated distributions do not agree with the real tile data and are
+not yet validated for detector digitization.  The present FairShip timing
+model therefore relies on the resolution measured in real data and applies it
+as a smearing term; it does not import the standalone simulated timing
+distribution.  Further comparison with data, tuning of the optical and sensor
+models, and validation of the two-tile timing observable are required before
+the simulated timing response can replace that data-driven treatment.
 

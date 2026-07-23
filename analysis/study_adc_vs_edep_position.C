@@ -83,34 +83,52 @@ void study_adc_vs_edep_position(
   const double adcLimit = std::max(10.0, 1.05 * maximumAdcCounts);
   const int positionBins = static_cast<int>(tileSizeMm);
   const double tileHalfSizeMm = 0.5 * tileSizeMm;
+  const std::string tileLabel =
+      std::to_string(static_cast<int>(std::lround(tileSizeMm))) + " x " +
+      std::to_string(static_cast<int>(std::lround(tileSizeMm))) + " mm tile";
 
   TH2D adcVsEdep(
       "adc_vs_edep",
-      "ADC response versus deposited energy;Deposited energy [MeV];ADC counts",
+      ("ADC response versus deposited energy (" + tileLabel +
+       ");Deposited energy, E_{dep} [MeV];Digitized signal [ADC counts];Number "
+       "of events")
+          .c_str(),
       100, 0.0, edepLimit, 100, 0.0, adcLimit);
   TH1D adcCountsDistribution(
       "adc_counts_distribution",
-      "ADC-count distribution;ADC counts;Events", 100, 0.0, adcLimit);
-  TProfile meanAdcVsEdep("mean_adc_vs_edep",
-                         "Mean ADC response versus deposited energy;Deposited "
-                         "energy [MeV];Mean ADC counts",
-                         50, 0.0, edepLimit);
-  TProfile2D meanAdcVsPosition("mean_adc_vs_position",
-                               "Mean ADC response across the tile;Primary hit "
-                               "x [mm];Primary hit y [mm];Mean ADC counts",
-                               positionBins, -tileHalfSizeMm, tileHalfSizeMm,
-                               positionBins, -tileHalfSizeMm, tileHalfSizeMm);
-  TProfile2D meanAdcPerMeVVsPosition(
-      "mean_adc_per_mev_vs_position",
-      "Energy-normalized ADC response across the tile;Primary hit x "
-      "[mm];Primary hit y [mm];Mean ADC counts / MeV",
+      ("Digitized-signal distribution (" + tileLabel +
+       ");Digitized signal [ADC counts];Number of events")
+          .c_str(),
+      100, 0.0, adcLimit);
+  TProfile meanAdcVsEdep(
+      "mean_adc_vs_edep",
+      ("Mean ADC response versus deposited energy (" + tileLabel +
+       ");Deposited energy, E_{dep} [MeV];Mean digitized signal [ADC counts]")
+          .c_str(),
+      50, 0.0, edepLimit);
+  TProfile2D meanAdcVsPosition(
+      "mean_adc_vs_position",
+      ("Mean ADC response versus hit position (" + tileLabel +
+       ");Hit x position relative to tile center [mm];Hit y position relative "
+       "to tile center [mm];Mean digitized signal [ADC counts]")
+          .c_str(),
       positionBins, -tileHalfSizeMm, tileHalfSizeMm, positionBins,
       -tileHalfSizeMm, tileHalfSizeMm);
-  TH2D adcVsDistance("adc_vs_distance_from_center",
-                     "ADC response versus distance from tile center;Distance "
-                     "from center [mm];ADC counts",
-                     80, 0.0, tileHalfSizeMm * std::sqrt(2.0), 100, 0.0,
-                     adcLimit);
+  TProfile2D meanAdcPerMeVVsPosition(
+      "mean_adc_per_mev_vs_position",
+      ("Mean energy-normalized ADC response versus hit position (" + tileLabel +
+       ");Hit x position relative to tile center [mm];Hit y position relative "
+       "to tile center [mm];Mean ADC response [ADC counts / MeV]")
+          .c_str(),
+      positionBins, -tileHalfSizeMm, tileHalfSizeMm, positionBins,
+      -tileHalfSizeMm, tileHalfSizeMm);
+  TH2D adcVsDistance(
+      "adc_vs_distance_from_center",
+      ("ADC response versus radial hit position (" + tileLabel +
+       ");Distance from tile center [mm];Digitized signal [ADC counts];Number "
+       "of events")
+          .c_str(),
+      80, 0.0, tileHalfSizeMm * std::sqrt(2.0), 100, 0.0, adcLimit);
 
   for (const auto& record : records) {
     const double radiusMm = std::hypot(record.xMm, record.yMm);

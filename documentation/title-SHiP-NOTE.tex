@@ -38,7 +38,7 @@
 % Title --------------------------------------------------
 {\bf\boldmath\huge
 \begin{center}
-  DUBT standalone implementation
+  UBT standalone simulation and FairShip implementation
 \end{center}
 }
 
@@ -57,8 +57,28 @@ $^1$EPFL\\
 
 % Abstract -----------------------------------------------
 \begin{abstract}
-  \noindent
-This is the abstract of the note.
+\noindent
+This note describes a standalone Geant4 model and its integration into
+FairShip for the SHiP upstream background tagger (UBT).  The standalone
+application simulates scintillation production and optical-photon transport
+in \(40\times40\times10~\mathrm{mm^3}\) and
+\(20\times20\times5~\mathrm{mm^3}\) tiles coupled to the same
+\(6\times6~\mathrm{mm^2}\) photosensor. Position-dependent ADC/MeV maps derived from
+the two tile configurations are used as compact calibration inputs to the
+FairShip digitizer, avoiding optical-photon propagation during full detector
+simulation.
+
+The FairShip implementation constructs coarse \(40\times40~\mathrm{cm^2}\)
+sensitive regions from a common YAML detector map.  During digitization, each
+Monte Carlo point is assigned to the center of an implicit \(2\times2\) or
+\(4\times4~\mathrm{cm^2}\) constituent tile.  Its deposited energy and exact
+within-tile position determine the ADC count through the corresponding
+response map, and a threshold of 100 ADC counts defines the trigger decision.
+The note documents the geometry, physics assumptions, analysis workflow,
+ROOT branches, calibration procedure, and current limitations.  In
+particular, the simulated timing study remains preliminary and does not yet
+reproduce real measurements; FairShip therefore currently uses a
+real-data-based timing smearing rather than the simulated timing response.
 \end{abstract}
 
 \vspace*{2.0cm}
@@ -74,8 +94,8 @@ This is the abstract of the note.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %  empty page follows the title page ----
-\newpage
-\setcounter{page}{2}
-\mbox{~}
+% \newpage
+% \setcounter{page}{2}
+% \mbox{~}
 
-\cleardoublepage
+% \cleardoublepage

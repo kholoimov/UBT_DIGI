@@ -5,6 +5,7 @@
 #include <TSystem.h>
 #include <TTree.h>
 
+#include <cmath>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -46,11 +47,16 @@ void plot_adc_per_edep_vs_position(
   events->GetEntry(0);
   const int positionBins = static_cast<int>(tileSizeMm);
   const double tileHalfSizeMm = 0.5 * tileSizeMm;
+  const std::string tileLabel =
+      std::to_string(static_cast<int>(std::lround(tileSizeMm))) + " x " +
+      std::to_string(static_cast<int>(std::lround(tileSizeMm))) + " mm tile";
 
   TProfile2D adcPerEdep(
       "adc_per_edep_vs_position",
-      "Energy-normalized ADC response;Primary hit x [mm];Primary hit y [mm];"
-      "Mean ADC counts / E_{dep} [MeV]",
+      ("ADC response per deposited energy versus hit position (" + tileLabel +
+       ");Hit x position relative to tile center [mm];Hit y position relative "
+       "to tile center [mm];Mean ADC / E_{dep} [ADC counts / MeV]")
+          .c_str(),
       positionBins, -tileHalfSizeMm, tileHalfSizeMm, positionBins,
       -tileHalfSizeMm, tileHalfSizeMm);
 

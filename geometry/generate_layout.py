@@ -8,15 +8,7 @@ HALF_SIZE_CM = FULL_SIZE_CM // 2
 
 GREEN_TILE_CM = 2
 BLUE_TILE_CM = 4
-SIM_BLOCK_CM = 50
-
-
-def blue_regions():
-    return (
-        (-200, 200, 48, 300),
-        (-200, 200, -300, -48),
-        (-100, 100, -48, 48),
-    )
+SIM_BLOCK_CM = 40
 
 
 def simulation_regions():
@@ -27,9 +19,14 @@ def simulation_regions():
 
     for y in range(int(start), stop, SIM_BLOCK_CM):
         for x in range(int(start), stop, SIM_BLOCK_CM):
-            is_blue_top = (-200 <= x <= 200) and (48 <= y <= 300)
-            is_blue_bottom = (-200 <= x <= 200) and (-300 <= y <= -48)
-            is_blue_neck = (-100 <= x <= 100) and (-48 <= y <= 48)
+            # The three outer columns on each side are green over the full
+            # height. In the central neck, two additional green columns on
+            # each side, centered at x = +/-160 cm and x = +/-120 cm, leave a
+            # five-column blue core. Extending the neck from +/-160 cm to
+            # +/-120 cm adds six green 40 x 40 cm regions in total.
+            is_blue_top = (-160 <= x <= 160) and (48 <= y <= 300)
+            is_blue_bottom = (-160 <= x <= 160) and (-300 <= y <= -48)
+            is_blue_neck = (-80 <= x <= 80) and (-48 <= y <= 48)
             constituent_tile_size = (
                 BLUE_TILE_CM
                 if (is_blue_top or is_blue_bottom or is_blue_neck)
@@ -50,31 +47,19 @@ def simulation_regions():
     return regions
 
 
-def iter_blue_tiles():
-    for x_min, x_max, y_min, y_max in blue_regions():
-        for y in range(y_min + BLUE_TILE_CM // 2, y_max, BLUE_TILE_CM):
-            for x in range(x_min + BLUE_TILE_CM // 2, x_max, BLUE_TILE_CM):
-                yield x, y
-
-
-def covered_green_cells_by_blue():
-    covered = set()
-    for x, y in iter_blue_tiles():
-        for dx in (-1, 1):
-            for dy in (-1, 1):
-                covered.add((x + dx, y + dy))
-    return covered
-
-
-def iter_green_tiles(covered_cells):
-    for y in range(-HALF_SIZE_CM + GREEN_TILE_CM // 2,
-                   HALF_SIZE_CM,
-                   GREEN_TILE_CM):
-        for x in range(-HALF_SIZE_CM + GREEN_TILE_CM // 2,
-                       HALF_SIZE_CM,
-                       GREEN_TILE_CM):
-            if (x, y) not in covered_cells:
-                yield x, y
+def iter_constituent_tiles():
+    """Subdivide every simulation region without crossing its boundary."""
+    for region in simulation_regions():
+        tile_size = region["constituent_tile_size"]
+        x_min = region["x"] - region["size_x"] // 2
+        y_min = region["y"] - region["size_y"] // 2
+        for y in range(y_min + tile_size // 2,
+                       y_min + region["size_y"],
+                       tile_size):
+            for x in range(x_min + tile_size // 2,
+                           x_min + region["size_x"],
+                           tile_size):
+                yield x, y, tile_size
 
 
 def write_digitization_layout(output_path: Path):
@@ -83,7 +68,7 @@ def write_digitization_layout(output_path: Path):
         'kind: digitization',
         'units: cm',
         'origin: "detector center at (0, 0)"',
-        'note: "Green tiles form two side columns (x = -300 to -200 cm and x = 200 to 300 cm, over the full y span) plus two neck blocks near x = [-200, -100] cm and [100, 200] cm. To avoid a leftover 2 cm seam when using 4 x 4 cm blue tiles, the blue/neck boundary is snapped from +/-50 cm to +/-48 cm."',
+        'note: "Every 2 x 2 cm green or 4 x 4 cm blue tile is contained in one 40 x 40 cm parent region. Three green parent columns cover x = -300 to -180 cm and x = 180 to 300 cm over the full height. The central neck adds the parent columns centered at x = -160, -120, 120, and 160 cm; the innermost pair adds six green regions across the three central rows."',
         'tile_sizes:',
         f'  blue: {BLUE_TILE_CM}',
         f'  green: {GREEN_TILE_CM}',
@@ -94,17 +79,9 @@ def write_digitization_layout(output_path: Path):
     ]
 
     next_id = 0
-    covered_cells = covered_green_cells_by_blue()
-
-    for x, y in iter_blue_tiles():
+    for x, y, tile_size in iter_constituent_tiles():
         lines.append(
-            f'  - {{id: {next_id}, x: {x}, y: {y}, size: {BLUE_TILE_CM}, constituent_tile_size: {BLUE_TILE_CM}}}'
-        )
-        next_id += 1
-
-    for x, y in iter_green_tiles(covered_cells):
-        lines.append(
-            f'  - {{id: {next_id}, x: {x}, y: {y}, size: {GREEN_TILE_CM}, constituent_tile_size: {GREEN_TILE_CM}}}'
+            f'  - {{id: {next_id}, x: {x}, y: {y}, size: {tile_size}, constituent_tile_size: {tile_size}}}'
         )
         next_id += 1
 
@@ -119,7 +96,7 @@ def write_simulation_layout(output_path: Path):
         'kind: simulation',
         'units: cm',
         'origin: "detector center at (0, 0)"',
-        'note: "This compact representation uses a 50 x 50 cm block grid over the full 6 m x 6 m detector plane, while preserving the same hourglass structure as the detailed layout: top and bottom blue bands plus a central blue neck, with the remaining area green."',
+        'note: "This compact representation uses a 15 x 15 grid of 40 x 40 cm parent regions over the full 6 m x 6 m detector plane. Three green columns occupy each outer side. In the central neck, additional green columns centered at x = -160, -120, 120, and 160 cm surround the five-column blue core."',
         'full_size:',
         f'  x: {FULL_SIZE_CM}',
         f'  y: {FULL_SIZE_CM}',

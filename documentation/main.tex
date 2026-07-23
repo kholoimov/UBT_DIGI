@@ -24,6 +24,30 @@
 \usepackage{booktabs}
 \usepackage{hyperref}
 \usepackage{enumitem}
+\usepackage{mdframed}
+
+% All optional implementation prose is enclosed only by
+% \begin{technicaldetails} ... \end{technicaldetails}.  Removing those two
+% markers restores ordinary text; changing this definition restyles every
+% technical block consistently.
+\newmdenv[
+  linecolor=technicalgray,
+  linewidth=1.2pt,
+  topline=false,
+  rightline=false,
+  bottomline=false,
+  innerleftmargin=10pt,
+  innerrightmargin=0pt,
+  innertopmargin=5pt,
+  innerbottommargin=5pt,
+  skipabove=8pt,
+  skipbelow=8pt,
+  frametitle={Technical details (optional)},
+  frametitlefont=\small\bfseries\color{technicalgray},
+  frametitleaboveskip=0pt,
+  frametitlebelowskip=4pt,
+  repeatframetitle=false
+]{technicaldetails}
 
 \usepackage[abs]{overpic}
 \setlength\unitlength{1mm}
@@ -41,6 +65,7 @@
 %\setboolean{inbibliography}{false} %True once you enter the bibliography
 
 \input{preamble}
+\definecolor{technicalgray}{gray}{0.45}
 %\usepackage{longtable} % only for template; not usually to be used in PAPERs
 
 \begin{document}

@@ -7,8 +7,8 @@
 #include <vector>
 
 #include "TCanvas.h"
-#include "TFile.h"
 #include "TF1.h"
+#include "TFile.h"
 #include "TFitResult.h"
 #include "TFitResultPtr.h"
 #include "TGraph.h"
@@ -32,7 +32,7 @@ constexpr std::array<int, 15> kTimingThresholdPe = {
 
 void ConfigureStyle() {
   gROOT->SetBatch(kTRUE);
-  // gStyle->SetOptStat(0);
+  gStyle->SetOptStat(0);
   gStyle->SetTitleFontSize(0.04);
   gStyle->SetPadLeftMargin(0.12);
   gStyle->SetPadRightMargin(0.14);
@@ -52,8 +52,10 @@ bool FitGaussianSigma(TH1D& histogram, double& sigmaNs) {
 
   const double mean = histogram.GetMean();
   const double rms = histogram.GetRMS();
-  const double fitMin = std::max(histogram.GetXaxis()->GetXmin(), mean - 2.0 * rms);
-  const double fitMax = std::min(histogram.GetXaxis()->GetXmax(), mean + 2.0 * rms);
+  const double fitMin =
+      std::max(histogram.GetXaxis()->GetXmin(), mean - 2.0 * rms);
+  const double fitMax =
+      std::min(histogram.GetXaxis()->GetXmax(), mean + 2.0 * rms);
   if (fitMax <= fitMin) {
     return false;
   }
@@ -152,19 +154,27 @@ void plot_event_observables(const char* inputFile = "scintillator_digi.root",
   }
   const int positionBins = static_cast<int>(tileSizeMm);
   const double tileHalfSizeMm = 0.5 * tileSizeMm;
+  const TString tileLabel =
+      TString::Format("%.0f #times %.0f mm tile", tileSizeMm, tileSizeMm);
 
   auto lightVsEnergy =
       std::make_unique<TH2D>("light_vs_muon_energy",
-                             "Light Production vs Muon Energy;Muon kinetic "
-                             "energy [MeV];Scintillation photons",
+                             TString::Format("Scintillation-light production "
+                                             "versus muon energy (%s);Muon "
+                                             "kinetic energy [MeV];Produced "
+                                             "scintillation photons "
+                                             "[photons];Number of events",
+                                             tileLabel.Data()),
                              80, 0.0, 20000.0, 120, 15000.0, 40000.0);
   auto lightVsEnergyProfile = std::make_unique<TProfile>(
       "light_vs_muon_energy_profile", "", 80, 0.0, 20000.0);
 
   auto arrivedVsPhotons = std::make_unique<TH2D>(
       "arrived_photons_vs_scintillation_photons",
-      "Arrived Photons vs Produced Photons;Scintillation photons;Photons "
-      "arriving at sensor",
+      TString::Format("Sensor photon collection versus produced light "
+                      "(%s);Produced scintillation photons [photons];Photons "
+                      "arriving at PMT [photons];Number of events",
+                      tileLabel.Data()),
       120, 15000.0, 40000.0, 120, 0.0, 4000.0);
   auto arrivedVsPhotonsProfile = std::make_unique<TProfile>(
       "arrived_photons_vs_scintillation_photons_profile", "", 120, 15000.0,
@@ -172,48 +182,69 @@ void plot_event_observables(const char* inputFile = "scintillator_digi.root",
 
   auto peVsPhotons =
       std::make_unique<TH2D>("photoelectrons_vs_scintillation_photons",
-                             "Photoelectrons vs Produced Photons;Scintillation "
-                             "photons;Detected photoelectrons",
-                             120, 15000.0, 40000.0, 120, 100.0, 400.0);
+                             TString::Format("Detected photoelectrons versus "
+                                             "produced light (%s);Produced "
+                                             "scintillation photons "
+                                             "[photons];Detected signal "
+                                             "[photoelectrons];Number of "
+                                             "events",
+                                             tileLabel.Data()),
+                             120, 15000.0, 40000.0, 120, 200.0, 600.0);
   auto peVsPhotonsProfile = std::make_unique<TProfile>(
       "photoelectrons_vs_scintillation_photons_profile", "", 120, 15000.0,
       40000.0);
   auto photonBirthMap = std::make_unique<TH2D>(
       "pmt_photon_birth_map",
-      "Birth Positions of Photons Reaching Sensor;birth x [mm];birth y [mm]",
+      TString::Format("Birth positions of photons reaching the PMT (%s);Photon "
+                      "birth x position relative to tile center [mm];Photon "
+                      "birth y position relative to tile center [mm];Number of "
+                      "photons",
+                      tileLabel.Data()),
       positionBins, -tileHalfSizeMm, tileHalfSizeMm, positionBins,
       -tileHalfSizeMm, tileHalfSizeMm);
   auto muonHitMap = std::make_unique<TH2D>(
       "muon_hit_map",
-      "Muon Hit Positions in Scintillator;hit x [mm];hit y [mm]", positionBins,
-      -tileHalfSizeMm, tileHalfSizeMm, positionBins, -tileHalfSizeMm,
-      tileHalfSizeMm);
+      TString::Format("Simulated muon hit positions (%s);Muon hit x position "
+                      "relative to tile center [mm];Muon hit y position "
+                      "relative to tile center [mm];Number of events",
+                      tileLabel.Data()),
+      positionBins, -tileHalfSizeMm, tileHalfSizeMm, positionBins,
+      -tileHalfSizeMm, tileHalfSizeMm);
 
   auto pmt_charge_pc_histogram = std::make_unique<TH1D>(
-      "pmt_charge_pc_histogram", "pmt_charge_pc_histogram", 100, 100, 600);
+      "pmt_charge_pc_histogram",
+      TString::Format("PMT charge distribution (%s);Integrated PMT charge "
+                      "[pC];Number of events",
+                      tileLabel.Data()),
+      100, 100, 600);
   auto scintBirthTimeHistogram = std::make_unique<TH1D>(
       "scintillation_birth_time_histogram",
-      "Scintillation and Detected-Photon Timing;time [ns];counts", 160, 0.0,
-      60.0);
+      "Photon timing distributions;Time relative to muon hit [ns];Number of "
+      "photons",
+      160, 0.0, 60.0);
   auto detectedPhotonBirthTimeHistogram = std::make_unique<TH1D>(
       "detected_photon_birth_time_histogram",
-      "Scintillation and Detected-Photon Timing;time [ns];counts", 160, 0.0,
-      60.0);
+      "Photon timing distributions;Time relative to muon hit [ns];Number of "
+      "photons",
+      160, 0.0, 60.0);
   auto detectedPhotonArrivalTimeHistogram = std::make_unique<TH1D>(
       "detected_photon_arrival_time_histogram",
-      "Scintillation and Detected-Photon Timing;time [ns];counts", 160, 0.0,
-      8.0);
+      "Photon timing distributions;Time relative to muon hit [ns];Number of "
+      "photons",
+      160, 0.0, 8.0);
   auto deltaArrivalTimePe100MinusPe1Histogram =
       std::make_unique<TH1D>("delta_arrival_time_pe100_minus_pe1_histogram",
                              "Arrival-Time Difference PE 100 - PE 1;#Deltat = "
-                             "t_{100} - t_{1} [ns];counts",
+                             "t_{100} - t_{1} [ns];Number of events",
                              160, -4, 4.0);
   auto deltaArrivalTimePe1MinusPe100Histogram = std::make_unique<TH1D>(
       "delta_arrival_time_pe1_minus_pe100_histogram",
-      "Arrival-Time Comparison with PE 100;time [ns];counts", 240, -4.0, 4.0);
+      "Arrival-time comparison at PE 100;Time [ns];Number of events", 240, -4.0,
+      4.0);
   auto arrivalTimePe100Histogram = std::make_unique<TH1D>(
       "arrival_time_pe100_histogram",
-      "Arrival-Time Comparison with PE 100;time [ns];counts", 240, -4.0, 4.0);
+      "Arrival-time comparison at PE 100;Time [ns];Number of events", 240, -4.0,
+      4.0);
 
   std::vector<double> thresholdValues;
   std::vector<double> sigmaValues;
