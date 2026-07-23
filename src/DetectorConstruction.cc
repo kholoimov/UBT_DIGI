@@ -1,13 +1,9 @@
 #include "DetectorConstruction.hh"
 
-#include "PMTSensitiveDetector.hh"
-#include "ScintillatorSensitiveDetector.hh"
-#include "TimingModelParameters.hh"
-
 #include "G4Box.hh"
 #include "G4LogicalBorderSurface.hh"
-#include "G4LogicalVolume.hh"
 #include "G4LogicalSkinSurface.hh"
+#include "G4LogicalVolume.hh"
 #include "G4Material.hh"
 #include "G4MaterialPropertiesTable.hh"
 #include "G4NistManager.hh"
@@ -15,9 +11,11 @@
 #include "G4PVPlacement.hh"
 #include "G4SDManager.hh"
 #include "G4SystemOfUnits.hh"
+#include "PMTSensitiveDetector.hh"
+#include "ScintillatorSensitiveDetector.hh"
+#include "TimingModelParameters.hh"
 
 namespace {
-constexpr G4double kScintillatorHalfZ = 5.0 * mm;
 constexpr G4double kSipmHalfX = 3.0 * mm;
 constexpr G4double kSipmHalfY = 3.0 * mm;
 constexpr G4double kWrapReflectivity = 0.96;
@@ -25,6 +23,7 @@ constexpr G4double kWrapSigmaAlpha = 0.35;
 }  // namespace
 
 G4VPhysicalVolume* DetectorConstruction::Construct() {
+  const G4double scintillatorHalfZ = fScintillatorHalfThickness * mm;
   auto* nist = G4NistManager::Instance();
 
   auto* worldMaterial = nist->FindOrBuildMaterial("G4_AIR");
@@ -43,14 +42,15 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
   opticalGrease->AddElement(carbon, 2);
   opticalGrease->AddElement(hydrogen, 6);
 
-  auto* photocathode = new G4Material("PhotocathodeMaterial", 2.33 * g / cm3, 1);
+  auto* photocathode =
+      new G4Material("PhotocathodeMaterial", 2.33 * g / cm3, 1);
   photocathode->AddElement(silicon, 1);
 
   auto* mpt = new G4MaterialPropertiesTable();
 
   const G4int nEntries = 5;
-  G4double photonEnergy[nEntries] = {2.75 * eV, 2.85 * eV, 2.93 * eV,
-                                     3.00 * eV, 3.10 * eV};
+  G4double photonEnergy[nEntries] = {2.75 * eV, 2.85 * eV, 2.93 * eV, 3.00 * eV,
+                                     3.10 * eV};
   G4double scintRefractiveIndex[nEntries] = {1.58, 1.58, 1.58, 1.58, 1.58};
   G4double absorptionLength[nEntries] = {210.0 * cm, 210.0 * cm, 210.0 * cm,
                                          210.0 * cm, 210.0 * cm};
@@ -75,9 +75,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
                                          500.0 * cm, 500.0 * cm};
   G4double glassAbsorption[nEntries] = {300.0 * cm, 300.0 * cm, 300.0 * cm,
                                         300.0 * cm, 300.0 * cm};
-  G4double photocathodeAbsorption[nEntries] = {1.0e-6 * mm, 1.0e-6 * mm,
-                                               1.0e-6 * mm, 1.0e-6 * mm,
-                                               1.0e-6 * mm};
+  G4double photocathodeAbsorption[nEntries] = {
+      1.0e-6 * mm, 1.0e-6 * mm, 1.0e-6 * mm, 1.0e-6 * mm, 1.0e-6 * mm};
   G4double wrapReflectivity[nEntries] = {kWrapReflectivity, kWrapReflectivity,
                                          kWrapReflectivity, kWrapReflectivity,
                                          kWrapReflectivity};
@@ -110,7 +109,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
   worldMaterial->SetMaterialPropertiesTable(airMpt);
 
   auto* greaseMpt = new G4MaterialPropertiesTable();
-  greaseMpt->AddProperty("RINDEX", photonEnergy, greaseRefractiveIndex, nEntries);
+  greaseMpt->AddProperty("RINDEX", photonEnergy, greaseRefractiveIndex,
+                         nEntries);
   greaseMpt->AddProperty("ABSLENGTH", photonEnergy, greaseAbsorption, nEntries);
   opticalGrease->SetMaterialPropertiesTable(greaseMpt);
 
@@ -132,9 +132,9 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
   auto* worldPhysical =
       new G4PVPlacement(nullptr, {}, worldLogical, "World", nullptr, false, 0);
 
-  auto* scintillatorSolid = new G4Box(
-      "Scintillator", fScintillatorHalfSize * mm,
-      fScintillatorHalfSize * mm, kScintillatorHalfZ);
+  auto* scintillatorSolid =
+      new G4Box("Scintillator", fScintillatorHalfSize * mm,
+                fScintillatorHalfSize * mm, scintillatorHalfZ);
   fScintillatorLogical = new G4LogicalVolume(scintillatorSolid, scintillator,
                                              "ScintillatorLogical");
 
@@ -146,13 +146,13 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
   constexpr double windowThickness = 1.0 * mm;
   constexpr double photocathodeThickness = 0.1 * mm;
 
-  auto* greaseSolid = new G4Box("OpticalGrease", kSipmHalfX, kSipmHalfY,
-                                0.5 * greaseThickness);
+  auto* greaseSolid =
+      new G4Box("OpticalGrease", kSipmHalfX, kSipmHalfY, 0.5 * greaseThickness);
   auto* greaseLogical =
       new G4LogicalVolume(greaseSolid, opticalGrease, "OpticalGreaseLogical");
   auto* greasePhysical = new G4PVPlacement(
-      nullptr, {0.0, 0.0, kScintillatorHalfZ + 0.5 * greaseThickness}, greaseLogical,
-      "OpticalGrease", worldLogical, false, 0);
+      nullptr, {0.0, 0.0, scintillatorHalfZ + 0.5 * greaseThickness},
+      greaseLogical, "OpticalGrease", worldLogical, false, 0);
 
   auto* windowSolid =
       new G4Box("PmtWindow", kSipmHalfX, kSipmHalfY, 0.5 * windowThickness);
@@ -160,19 +160,19 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
       new G4LogicalVolume(windowSolid, glassMaterial, "PmtWindowLogical");
   auto* windowPhysical = new G4PVPlacement(
       nullptr,
-      {0.0, 0.0, kScintillatorHalfZ + greaseThickness + 0.5 * windowThickness},
+      {0.0, 0.0, scintillatorHalfZ + greaseThickness + 0.5 * windowThickness},
       windowLogical, "PmtWindow", worldLogical, false, 0);
 
-  auto* photocathodeSolid = new G4Box(
-      "Photocathode", kSipmHalfX, kSipmHalfY, 0.5 * photocathodeThickness);
+  auto* photocathodeSolid = new G4Box("Photocathode", kSipmHalfX, kSipmHalfY,
+                                      0.5 * photocathodeThickness);
   fPhotocathodeLogical = new G4LogicalVolume(photocathodeSolid, photocathode,
                                              "PhotocathodeLogical");
-  new G4PVPlacement(
-      nullptr,
-      {0.0, 0.0,
-       kScintillatorHalfZ + greaseThickness + windowThickness +
-           0.5 * photocathodeThickness},
-      fPhotocathodeLogical, "Photocathode", worldLogical, false, 0);
+  new G4PVPlacement(nullptr,
+                    {0.0, 0.0,
+                     scintillatorHalfZ + greaseThickness + windowThickness +
+                         0.5 * photocathodeThickness},
+                    fPhotocathodeLogical, "Photocathode", worldLogical, false,
+                    0);
 
   auto* opticalSurface = new G4OpticalSurface("OpticalCouplingSurface");
   opticalSurface->SetType(dielectric_dielectric);
@@ -185,14 +185,16 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
   wrapSurface->SetFinish(groundfrontpainted);
   wrapSurface->SetSigmaAlpha(kWrapSigmaAlpha);
   auto* wrapMpt = new G4MaterialPropertiesTable();
-  wrapMpt->AddProperty("REFLECTIVITY", photonEnergy, wrapReflectivity, nEntries);
+  wrapMpt->AddProperty("REFLECTIVITY", photonEnergy, wrapReflectivity,
+                       nEntries);
   wrapSurface->SetMaterialPropertiesTable(wrapMpt);
 
   new G4LogicalBorderSurface("ScintillatorToGrease", scintillatorPhysical,
                              greasePhysical, opticalSurface);
   new G4LogicalBorderSurface("GreaseToWindow", greasePhysical, windowPhysical,
                              opticalSurface);
-  new G4LogicalSkinSurface("ScintillatorWrap", fScintillatorLogical, wrapSurface);
+  new G4LogicalSkinSurface("ScintillatorWrap", fScintillatorLogical,
+                           wrapSurface);
 
   return worldPhysical;
 }

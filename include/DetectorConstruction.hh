@@ -9,7 +9,8 @@ class G4VPhysicalVolume;
 class DetectorConstruction : public G4VUserDetectorConstruction {
  public:
   explicit DetectorConstruction(double scintillatorSizeMm)
-      : fScintillatorHalfSize(0.5 * scintillatorSizeMm) {}
+      : fScintillatorHalfSize(0.5 * scintillatorSizeMm),
+        fScintillatorHalfThickness(scintillatorSizeMm == 20.0 ? 2.5 : 5.0) {}
   ~DetectorConstruction() override = default;
 
   G4VPhysicalVolume* Construct() override;
@@ -19,6 +20,7 @@ class DetectorConstruction : public G4VUserDetectorConstruction {
   G4LogicalVolume* fScintillatorLogical = nullptr;
   G4LogicalVolume* fPhotocathodeLogical = nullptr;
   double fScintillatorHalfSize;
+  double fScintillatorHalfThickness;
 };
 
 #endif

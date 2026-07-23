@@ -56,8 +56,8 @@ Example muon and gamma runs:
 ./build/ubt_scintillator macros/run_gammas.mac
 ```
 
-The scintillator is 40 x 40 mm by default. Select the 20 x 20 mm tile with
-the environment variable below; the SiPM active area remains 6 x 6 mm:
+The scintillator is 40 x 40 x 10 mm by default. Select the 20 x 20 x 5 mm tile
+with the environment variable below; the SiPM active area remains 6 x 6 mm:
 
 ```bash
 UBT_SCINTILLATOR_SIZE_MM=20 \

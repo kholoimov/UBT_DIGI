@@ -1,10 +1,11 @@
 \section{Geometry}
 \subsection{Volumes and Dimensions}
-The geometry is defined in \texttt{src/DetectorConstruction.cc}. The world volume is an air box with half-size \texttt{(0.5 m, 0.5 m, 0.5 m)}. The active scintillator transverse size is selectable between \texttt{20 x 20 mm$^{2}$} and \texttt{40 x 40 mm$^{2}$}; its thickness remains \texttt{10 mm}.  The default is \texttt{40 x 40 x 10 mm$^{3}$}, while setting \texttt{UBT\_SCINTILLATOR\_SIZE\_MM=20} before application startup selects \texttt{20 x 20 x 10 mm$^{3}$}.  Other values are rejected. The photosensor is not scaled with the tile: its active transverse area retains half-dimensions \texttt{(3 mm, 3 mm)}, corresponding to a full active face of \texttt{6 x 6 mm$^{2}$} for both configurations.
+The geometry is defined in \texttt{src/DetectorConstruction.cc}. The world volume is an air box with half-size \texttt{(0.5 m, 0.5 m, 0.5 m)}. The default scintillator is \texttt{40 x 40 x 10 mm$^{3}$}. Setting \texttt{UBT\_SCINTILLATOR\_SIZE\_MM=20} before application startup selects a \texttt{20 x 20 x 5 mm$^{3}$} tile. Other transverse-size values are rejected. The photosensor is not scaled with the tile: its active transverse area retains half-dimensions \texttt{(3 mm, 3 mm)}, corresponding to a full active face of \texttt{6 x 6 mm$^{2}$} for both configurations.
 
 Along the positive $z$ direction, the sensor stack is:
 \begin{enumerate}[label=\arabic*.]
-\item scintillator, ending at $z = +5~\mathrm{mm}$,
+\item scintillator, ending at $z = +5~\mathrm{mm}$ for the 40 mm tile or
+$z = +2.5~\mathrm{mm}$ for the 20 mm tile,
 \item optical grease with thickness $0.2~\mathrm{mm}$,
 \item glass window with thickness $1.0~\mathrm{mm}$,
 \item photocathode / SiPM-sensitive slab with thickness $0.1~\mathrm{mm}$.
@@ -561,7 +562,7 @@ simulation. Their horizontal ranges are chosen independently from the largest
 ADC value in each sample; consequently the comparison should use both the axis
 scale and the distribution shape rather than bin number alone.
 
-\IfFileExists{../analysis/plots_20mm/adc/adc_counts_distribution.pdf}{%
+\IfFileExists{../analysis/plots/adc/adc_counts_distribution.pdf}{%
 \begin{figure}[htb]
   \centering
   \subfigure[$40\times40~\mathrm{mm^2}$ scintillator tile.]{%
