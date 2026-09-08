@@ -1,5 +1,7 @@
 /run/numberOfThreads 4
 /run/initialize
+/ubt/gun/randomizeEnergy false
+/ubt/gun/randomizeMuonPosition true
 /gun/particle gamma
 /gun/energy 1 MeV
 /gun/position 0 0 -30 mm

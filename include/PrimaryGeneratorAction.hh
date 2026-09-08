@@ -21,6 +21,9 @@ class PrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction {
   G4GenericMessenger* fMessenger = nullptr;
   bool fRandomizeMuonPosition = true;
   double fMuonBeamSpotHalfSize = 0.0;
+  bool fRandomizeEnergy = true;
+  double fMinEnergy = 0.0;
+  double fMaxEnergy = 0.0;
 };
 
 #endif

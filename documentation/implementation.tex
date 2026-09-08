@@ -25,6 +25,7 @@ The simulation uses the Geant4 global Cartesian system:
 Primary hit positions stored in the output are the first recorded muon hit coordinates in the scintillator, in millimeters.
 
 \subsection{Primary Generator Geometry}
+\label{sec:primary-generator-geometry}
 The primary particle generator is defined in \texttt{src/PrimaryGeneratorAction.cc}. It uses a one-particle gun with:
 \begin{itemize}
 \item particle type: $\mu^-$,
@@ -56,6 +57,31 @@ Muon kinetic energy is sampled uniformly between
 \[
 1~\mathrm{GeV} \le E_\mu \le 20~\mathrm{GeV}.
 \]
+
+\subsubsection{Particle Type and Fixed-Energy Configuration}
+The generator can also shoot $e^-$ or $\gamma$ primaries -- any particle
+name accepted by the standard \texttt{/gun/particle} command -- and, for any
+of these, a fixed kinetic energy set via the standard \texttt{/gun/energy}
+command instead of the randomized muon spectrum above. Two new
+\texttt{/ubt/gun/} commands control this, applying to whichever particle
+type is currently selected rather than only to muons:
+\begin{itemize}
+\item \texttt{randomizeEnergy} (default \texttt{true}): if true, a uniform
+random kinetic energy in \texttt{[minEnergy, maxEnergy]} is sampled for
+every event, reproducing the previous muon-only behavior for any particle
+type; if false, the fixed energy set via \texttt{/gun/energy} is used
+unchanged for every event.
+\item \texttt{minEnergy} / \texttt{maxEnergy} (default $1$--$20~\mathrm{GeV}$):
+bounds of that randomized range, used only when \texttt{randomizeEnergy} is
+true.
+\end{itemize}
+Position randomization (\texttt{randomizeMuonPosition} /
+\texttt{muonBeamSpotHalfSize}, Section~\ref{sec:energy-scan}) is likewise
+applied regardless of particle type, so particles are shot geometrically
+distributed across the tile face for any configuration. Setting
+\texttt{randomizeEnergy false} together with an explicit \texttt{/gun/energy}
+is how the discrete per-particle energy scan of
+Section~\ref{sec:energy-scan} fixes the beam energy at each scan point.
 
 \section{Materials and Optical Properties}
 \subsection{Scintillator Material}
@@ -739,6 +765,89 @@ $20\times20~\mathrm{mm^2}$ sample does not overwrite the default-tile results.
 \phantomsection\label{fig:ubt-adc-position-20mm}%
 \noindent\textit{The 20 mm ADC position maps are not present. Run the complete
 20 mm workflow given above to create them.}
+}
+
+\subsection{Particle-type and energy-dependent ADC response}
+\label{sec:energy-scan}
+
+This study characterizes the mean digitized response to $\mu^-$, $e^-$, and
+$\gamma$ primaries as a function of their kinetic energy, using the
+particle-type and fixed-energy generator configuration
+(\texttt{/ubt/gun/randomizeEnergy}) described in
+Section~\ref{sec:primary-generator-geometry}. Unlike the continuous
+randomized-energy general studies above, each data point here is a
+separate, short standalone run at one fixed kinetic energy.
+
+\subsubsection{Method}
+For each particle type, \texttt{analysis/run\_energy\_scan.sh} runs the
+simulation at 10 energies distributed geometrically (log-spaced, i.e. an
+adaptive step that grows with energy) across that type's range, so that a
+wide dynamic range is covered without a dense linear scan:
+\begin{itemize}
+\item $\mu^-$: $0.5$--$100~\mathrm{GeV}$,
+\item $e^-$: $1~\mathrm{MeV}$--$1~\mathrm{GeV}$,
+\item $\gamma$: $1~\mathrm{MeV}$--$1~\mathrm{GeV}$.
+\end{itemize}
+The muon range is as specified for this study. The $e^-$/$\gamma$ range is
+this analysis' own choice, not an independently specified requirement: it
+spans the photoelectric/Compton/pair-production transition for $\gamma$ and
+the absorbed-to-punch-through transition for $e^-$ in a few-mm-thick plastic
+tile, using the same bounds for both species for direct comparability.
+
+At every energy point, \texttt{/ubt/gun/randomizeEnergy} is set to
+\texttt{false} and the beam energy is fixed with the standard
+\texttt{/gun/energy} command; \texttt{/ubt/gun/randomizeMuonPosition}
+remains \texttt{true} (default beam-spot half-size), so primaries are still
+shot geometrically distributed across the tile face, as in the general
+studies. Each point uses
+\texttt{UBT\_ENABLE\_SCINTILLATOR\_PHOTON\_STUDIES=false} and a fixed event
+count per point (1500 for $\mu^-$, 3000 for $e^-$, 20000 for $\gamma$ -- a
+larger sample for $\gamma$ because only a few percent of photons interact
+at all in the thin tile, so far fewer events yield a non-zero digitized
+signal). Event counts and the number of scan points are configurable via
+environment variables read by the driver script.
+
+For each resulting \texttt{scintillator\_digi.root},
+\texttt{analysis/plot\_adc\_vs\_particle\_energy.C} computes, directly from
+the \texttt{adc\_counts} branch of the \texttt{events} tree (no histogram
+binning or fit): the mean ADC count, its Bessel-corrected standard error,
+the triggered fraction, and the mean deposited energy. These are written to
+\texttt{analysis/plots/energy\_scan/adc\_vs\_particle\_energy\_summary.csv}
+and plotted together on a single, shared log-energy axis.
+
+\subsubsection{Reproducing the scan}
+\begin{technicaldetails}
+\begin{verbatim}
+analysis/run_energy_scan.sh
+\end{verbatim}
+runs all three particle types at the default 10 points each and writes the
+plot and summary table to \texttt{analysis/plots/energy\_scan}. Per-point
+simulation output is kept under \texttt{output/energy\_scan/<particle>/}.
+Relevant environment-variable overrides: \texttt{UBT\_ENERGY\_SCAN\_POINTS},
+\texttt{UBT\_ENERGY\_SCAN\_EVENTS\_MUON/\_ELECTRON/\_PHOTON},
+\texttt{UBT\_ENERGY\_SCAN\_THREADS}, \texttt{UBT\_ENERGY\_SCAN\_OUTPUT}, and
+\texttt{UBT\_ENERGY\_SCAN\_ANALYSIS\_OUTPUT}.
+\end{technicaldetails}
+
+\subsubsection{Results}
+\IfFileExists{../analysis/plots/energy_scan/adc_vs_particle_energy.pdf}{%
+\begin{figure}[htb]
+  \centering
+  \includegraphics[width=0.7\linewidth]{../analysis/plots/energy_scan/adc_vs_particle_energy.pdf}
+  \caption{Mean ADC counts versus primary kinetic energy for $\mu^-$,
+  $e^-$, and $\gamma$ primaries, each shot geometrically distributed across
+  the $40\times40~\mathrm{mm^2}$ tile at 10 fixed, geometrically-spaced
+  energies. Error bars are the standard error of the mean ADC count at each
+  point; the $\gamma$ curve additionally has a much lower absolute
+  triggered fraction than $\mu^-$/$e^-$ at the same nominal energy, since
+  only a small fraction of photons interact in the thin tile at all (see
+  the summary CSV for the per-point triggered fraction).}
+  \label{fig:ubt-adc-vs-particle-energy}
+\end{figure}
+}{%
+\phantomsection\label{fig:ubt-adc-vs-particle-energy}%
+\noindent\textit{The particle-type energy-scan plot is not present. Run
+\texttt{analysis/run\_energy\_scan.sh} to create it.}
 }
 
 \cleardoublepage

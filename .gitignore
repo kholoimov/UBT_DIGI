@@ -221,3 +221,4 @@ __marimo__/
 *.csv
 !analysis/plots/adc/adc_per_edep_vs_position.csv
 !analysis/plots_20mm/adc/adc_per_edep_vs_position.csv
+!analysis/plots/energy_scan/adc_vs_particle_energy_summary.csv
