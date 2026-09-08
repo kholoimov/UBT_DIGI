@@ -45,31 +45,24 @@ void SaveCanvas(TCanvas& canvas, const TString& outputDir,
   canvas.SaveAs(outputDir + "/" + baseName + ".pdf");
 }
 
-bool FitGaussianSigma(TH1D& histogram, double& sigmaNs) {
-  if (histogram.GetEntries() < 10 || histogram.GetRMS() <= 0.0) {
+// Sample standard deviation from running sums, computed directly from the
+// per-event values (no histogram binning, no Gaussian fit):
+//   mean     = sum(x) / n
+//   variance = (sum(x^2) - n * mean^2) / (n - 1)   [Bessel-corrected]
+//   sigma    = sqrt(variance)
+bool SampleStandardDeviation(double sumX, double sumX2, int count,
+                             double& sigmaNs) {
+  if (count < 10) {
     return false;
   }
-
-  const double mean = histogram.GetMean();
-  const double rms = histogram.GetRMS();
-  const double fitMin =
-      std::max(histogram.GetXaxis()->GetXmin(), mean - 2.0 * rms);
-  const double fitMax =
-      std::min(histogram.GetXaxis()->GetXmax(), mean + 2.0 * rms);
-  if (fitMax <= fitMin) {
+  const double mean = sumX / count;
+  const double variance =
+      (sumX2 - static_cast<double>(count) * mean * mean) / (count - 1);
+  if (!(variance > 0.0)) {
     return false;
   }
-
-  TF1 gaussian(TString::Format("gaus_%s", histogram.GetName()), "gaus", fitMin,
-               fitMax);
-  gaussian.SetParameters(histogram.GetMaximum(), mean, rms);
-  const TFitResultPtr result = histogram.Fit(&gaussian, "QRS0");
-  if (result.Get() == nullptr || result->Status() != 0) {
-    return false;
-  }
-
-  sigmaNs = std::abs(gaussian.GetParameter(2));
-  return std::isfinite(sigmaNs) && sigmaNs > 0.0;
+  sigmaNs = std::sqrt(variance);
+  return std::isfinite(sigmaNs);
 }
 
 }  // namespace
@@ -249,27 +242,11 @@ void plot_event_observables(const char* inputFile = "scintillator_digi.root",
   std::vector<double> thresholdValues;
   std::vector<double> sigmaValues;
   std::array<double, kStoredArrivalPe.size()> arrivalTimeSumsNs = {};
+  std::array<double, kStoredArrivalPe.size()> arrivalTimeSqSumsNs = {};
   std::array<int, kStoredArrivalPe.size()> arrivalTimeCounts = {};
   std::array<double, kStoredArrivalPe.size()> deltaArrivalTimeSumsNs = {};
+  std::array<double, kStoredArrivalPe.size()> deltaArrivalTimeSqSumsNs = {};
   std::array<int, kStoredArrivalPe.size()> deltaArrivalTimeCounts = {};
-  std::array<std::unique_ptr<TH1D>, kStoredArrivalPe.size()>
-      arrivalTimeHistograms;
-  std::array<std::unique_ptr<TH1D>, kStoredArrivalPe.size()>
-      deltaArrivalTimeHistograms;
-  for (std::size_t i = 0; i < kStoredArrivalPe.size(); ++i) {
-    arrivalTimeHistograms[i] = std::make_unique<TH1D>(
-        TString::Format("arrival_time_fit_pe_%d", kStoredArrivalPe[i]),
-        TString::Format("PE %d arrival time;arrival time from muon [ns];events",
-                        kStoredArrivalPe[i]),
-        240, -2.0, 10.0);
-    if (i > 0) {
-      deltaArrivalTimeHistograms[i] = std::make_unique<TH1D>(
-          TString::Format("delta_arrival_time_fit_pe_%d", kStoredArrivalPe[i]),
-          TString::Format("PE %d minus PE 1; t_{N} - t_{1} [ns];events",
-                          kStoredArrivalPe[i]),
-          240, -4.0, 8.0);
-    }
-  }
   std::vector<std::unique_ptr<TH1D>> overlayHistograms;
   overlayHistograms.reserve(kOverlayIndices.size());
   for (int index : kOverlayIndices) {
@@ -300,8 +277,8 @@ void plot_event_observables(const char* inputFile = "scintillator_digi.root",
       for (std::size_t j = 0; j < kStoredArrivalPe.size(); ++j) {
         if (arrivalTimesNs[j] >= 0.0) {
           arrivalTimeSumsNs[j] += arrivalTimesNs[j];
+          arrivalTimeSqSumsNs[j] += arrivalTimesNs[j] * arrivalTimesNs[j];
           ++arrivalTimeCounts[j];
-          arrivalTimeHistograms[j]->Fill(arrivalTimesNs[j]);
         }
       }
 
@@ -313,8 +290,8 @@ void plot_event_observables(const char* inputFile = "scintillator_digi.root",
           }
           const double deltaArrivalTimeNs = arrivalTimesNs[j] - arrivalTimePe1;
           deltaArrivalTimeSumsNs[j] += deltaArrivalTimeNs;
+          deltaArrivalTimeSqSumsNs[j] += deltaArrivalTimeNs * deltaArrivalTimeNs;
           ++deltaArrivalTimeCounts[j];
-          deltaArrivalTimeHistograms[j]->Fill(deltaArrivalTimeNs);
 
           if (kStoredArrivalPe[j] == 100) {
             deltaArrivalTimePe100MinusPe1Histogram->Fill(deltaArrivalTimeNs);
@@ -508,10 +485,12 @@ void plot_event_observables(const char* inputFile = "scintillator_digi.root",
     if (thresholdIt != kStoredArrivalPe.end()) {
       const std::size_t index = static_cast<std::size_t>(
           std::distance(kStoredArrivalPe.begin(), thresholdIt));
-      double fittedSigmaNs = 0.0;
-      if (FitGaussianSigma(*arrivalTimeHistograms[index], fittedSigmaNs)) {
+      double sigmaNs = 0.0;
+      if (SampleStandardDeviation(arrivalTimeSumsNs[index],
+                                  arrivalTimeSqSumsNs[index],
+                                  arrivalTimeCounts[index], sigmaNs)) {
         thresholdValues.push_back(thresholdPe);
-        sigmaValues.push_back(fittedSigmaNs);
+        sigmaValues.push_back(sigmaNs);
       }
     }
   }
@@ -523,7 +502,7 @@ void plot_event_observables(const char* inputFile = "scintillator_digi.root",
                  thresholdValues.data(), sigmaValues.data());
     graph.SetTitle(
         "Timing Sigma vs Photoelectron Threshold;Photoelectron "
-        "threshold;Gaussian-fit timing sigma [ns]");
+        "threshold;Timing sigma [ns] (sample standard deviation)");
     graph.SetMarkerStyle(20);
     graph.SetMarkerSize(1.2);
     graph.SetMarkerColor(kBlue + 2);
@@ -812,13 +791,15 @@ void plot_event_observables(const char* inputFile = "scintillator_digi.root",
       }
       const double meanNs =
           deltaArrivalTimeSumsNs[i] / deltaArrivalTimeCounts[i];
-      double fittedSigmaNs = 0.0;
-      if (!FitGaussianSigma(*deltaArrivalTimeHistograms[i], fittedSigmaNs)) {
+      double sigmaNs = 0.0;
+      if (!SampleStandardDeviation(deltaArrivalTimeSumsNs[i],
+                                   deltaArrivalTimeSqSumsNs[i],
+                                   deltaArrivalTimeCounts[i], sigmaNs)) {
         continue;
       }
       deltaArrivalIndices.push_back(kStoredArrivalPe[i]);
       meanDeltaArrivalTimesNs.push_back(meanNs);
-      sigmaDeltaArrivalTimesNs.push_back(fittedSigmaNs);
+      sigmaDeltaArrivalTimesNs.push_back(sigmaNs);
     }
 
     if (!deltaArrivalIndices.empty()) {
@@ -846,7 +827,7 @@ void plot_event_observables(const char* inputFile = "scintillator_digi.root",
                         sigmaDeltaArrivalTimesNs.data());
       sigmaGraph.SetTitle(
           "Sigma of Arrival-Time Difference vs Threshold;Photoelectron "
-          "threshold;Gaussian-fit sigma of [t_{N} - t_{1}] [ns]");
+          "threshold;Sample standard deviation of [t_{N} - t_{1}] [ns]");
       sigmaGraph.SetMarkerStyle(20);
       sigmaGraph.SetMarkerSize(0.9);
       sigmaGraph.SetMarkerColor(kRed + 1);

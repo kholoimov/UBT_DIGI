@@ -563,10 +563,16 @@ an absolute arrival-time study and a first-photon-referenced study.
 For a photoelectron threshold \(N\), the absolute time \(t_N\) is the arrival
 time of the \(N\)-th detected photoelectron relative to the primary hit.
 Figure~\ref{fig:ubt-absolute-timing-response} shows its mean and resolution as
-the threshold is varied.  The mean is calculated over all events containing
-the requested photoelectron index.  The timing resolution is the Gaussian
-sigma obtained by fitting the event distribution of \(t_N\) with
-\texttt{gaus}.
+the threshold is varied.  Both are computed directly from the per-event
+values of \(t_N\), with no histogram binning or Gaussian fit involved: the
+mean is the arithmetic mean over all events containing the requested
+photoelectron index, and the timing resolution is the Bessel-corrected
+sample standard deviation,
+\[
+  \sigma_{t_N} = \sqrt{\frac{1}{n-1}\sum_{i=1}^{n}\left(t_{N,i}-\overline{t_N}\right)^2},
+\]
+evaluated separately at every stored threshold \(N\) (only thresholds with
+at least 10 contributing events are plotted).
 
 \IfFileExists{../analysis/plots/timing_sigma_vs_threshold.pdf}{%
 \begin{figure}[htb]
@@ -574,7 +580,7 @@ sigma obtained by fitting the event distribution of \(t_N\) with
   \subfigure[Mean arrival time \(t_N\) relative to the primary hit.]{%
     \includegraphics[width=0.47\linewidth]{../analysis/plots/mean_arrival_time_vs_pe_index.pdf}}
   \hfill
-  \subfigure[Gaussian-fit sigma of the \(t_N\) distribution.]{%
+  \subfigure[Sample standard deviation of the \(t_N\) distribution.]{%
     \includegraphics[width=0.47\linewidth]{../analysis/plots/timing_sigma_vs_threshold.pdf}}
   \caption{Absolute photoelectron-arrival mean and timing resolution as a
   function of the selected photoelectron threshold \(N\).}
@@ -602,9 +608,12 @@ separate tiles for this analysis; instead, \(t_1\) and \(t_N\) from the same
 simulated event reproduce the reference-to-threshold timing observable.
 
 Figure~\ref{fig:ubt-first-photon-timing-response} shows the mean of
-\(\Delta t_N\) and its Gaussian-fit sigma.  The latter is extracted by fitting
-the complete event distribution of \(t_N-t_1\) separately at every stored
-threshold.
+\(\Delta t_N\) and its resolution. As for the absolute-time study above, both
+are computed directly from the per-event values of \(\Delta t_N=t_N-t_1\) via
+their arithmetic mean and Bessel-corrected sample standard deviation, with no
+histogram binning or Gaussian fit, evaluated separately at every stored
+threshold (only thresholds with at least 10 contributing events are
+plotted).
 
 \IfFileExists{../analysis/plots/sigma_delta_arrival_time_vs_threshold.pdf}{%
 \begin{figure}[htb]
@@ -612,7 +621,7 @@ threshold.
   \subfigure[Mean delay from the first photoelectron to threshold \(N\).]{%
     \includegraphics[width=0.47\linewidth]{../analysis/plots/mean_delta_arrival_time_vs_threshold.pdf}}
   \hfill
-  \subfigure[Gaussian-fit sigma of the \(t_N-t_1\) distribution.]{%
+  \subfigure[Sample standard deviation of the \(t_N-t_1\) distribution.]{%
     \includegraphics[width=0.47\linewidth]{../analysis/plots/sigma_delta_arrival_time_vs_threshold.pdf}}
   \caption{First-photon-referenced mean delay and timing resolution, emulating
   the two-tile reference and threshold measurement.}
