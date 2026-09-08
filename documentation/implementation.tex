@@ -115,13 +115,45 @@ The present optical properties are simplified:
 
 The very short photocathode absorption length is used as an efficient absorbing sink for photons that reach the sensitive surface.
 
+\subsection{Scintillation Quenching (Birks Law)}
+\label{sec:birks-constant}
+A Birks constant is set on the scintillator material in
+\texttt{src/DetectorConstruction.cc},
+\[
+  k_B = 0.0872~\mathrm{mm/MeV},
+\]
+via \texttt{G4Material::GetIonisation()->SetBirksConstant(...)}. It is
+adopted from the organic-scintillator value
+$k_B = 9.0\times10^{-3}~\mathrm{g\,MeV^{-1}\,cm^{-2}}$ reported in
+arXiv:0911.3041, expressed directly in Geant4 length/energy units as in the
+reference \texttt{sts-g4-simulation} implementation (a related standalone
+Geant4 tile simulation, JGU Mainz / ETAP, used here only as a cross-check
+reference, not as part of this codebase).
+
+Without this constant, \texttt{G4Scintillation} produces a light yield
+strictly proportional to deposited energy, $N_\gamma \propto \mathrm{d}E$,
+regardless of the local ionization density. With the Birks constant set,
+Geant4's \texttt{G4EmSaturation} instead applies the differential quenching
+law
+\[
+  \frac{\mathrm{d}L}{\mathrm{d}x} =
+  \frac{S\,\dfrac{\mathrm{d}E}{\mathrm{d}x}}
+       {1 + k_B\,\dfrac{\mathrm{d}E}{\mathrm{d}x}},
+\]
+so that light output per unit path length saturates at high $\mathrm{d}E/\mathrm{d}x$
+(heavily ionizing tracks and track segments) rather than remaining linear.
+For minimum-ionizing muons, the primary beam in this simulation, the effect
+on the mean light yield is small; it is more relevant for the spread and
+tail of the response, and for any secondary heavy or low-energy charged
+tracks produced within the tile.
+
 \subsection{Surface Model}
 Two optical surface conventions are used:
 \begin{enumerate}[label=\arabic*.]
 \item polished dielectric--dielectric interfaces between scintillator and grease, and between grease and window,
 \item a diffuse wrapping skin surface on the scintillator with:
   \begin{itemize}
-  \item reflectivity $R = 0.96$,
+  \item wavelength-dependent reflectivity $R(\lambda)$ (see below),
   \item \texttt{groundfrontpainted} finish,
   \item \texttt{unified} model,
   \item $\sigma_\alpha = 0.35$.
@@ -129,6 +161,37 @@ Two optical surface conventions are used:
 \end{enumerate}
 
 This wrapping model gives randomized reflected directions and introduces angular smearing at the boundaries.
+
+\subsubsection{Wrap Reflectivity Curve}
+The wrap reflectivity was previously a single flat value, $R=0.96$, applied
+at all photon energies. It is now a tabulated \texttt{REFLECTIVITY}
+property with 15 points spanning $2.483$--$3.993~\mathrm{eV}$
+($\approx 310$--$499~\mathrm{nm}$), which fully covers the
+$2.75$--$3.10~\mathrm{eV}$ scintillator emission range without
+extrapolation. The table is measured data for 3M ESR (Enhanced Specular
+Reflector) foil from the GERDA experiment (MPI Munich), reused from the
+\texttt{sts-g4-simulation} reference implementation:
+\begin{center}
+\begin{tabular}{cccc}
+\toprule
+$E$ [eV] & $R$ & $E$ [eV] & $R$ \\
+\midrule
+2.483 & 0.988 & 3.193 & 0.873 \\
+2.536 & 0.990 & 3.230 & 0.673 \\
+2.617 & 0.988 & 3.360 & 0.105 \\
+2.702 & 0.985 & 3.503 & 0.097 \\
+2.794 & 0.981 & 3.660 & 0.097 \\
+2.891 & 0.978 & 3.817 & 0.111 \\
+2.995 & 0.975 & 3.993 & 0.136 \\
+3.109 & 0.965 & & \\
+\bottomrule
+\end{tabular}
+\end{center}
+Over the scintillator emission band, $R$ stays at $0.965$--$0.988$, close to
+the previous flat value; the curve mainly changes the model in the
+near-UV tail ($\gtrsim 3.2~\mathrm{eV}$, $\lesssim 385~\mathrm{nm}$), where
+real ESR foil reflectivity drops sharply, and would matter more if the
+emission or Cerenkov spectrum were extended further into the UV.
 
 \section{Scintillation Timing Model}
 The timing constants are centralized in \texttt{include/TimingModelParameters.hh}. The current values are:
@@ -187,24 +250,102 @@ The PMT / SiPM sensitive detector acts only on optical photons crossing into the
 \end{enumerate}
 
 \subsection{Efficiencies}
-In \texttt{src/PMTSensitiveDetector.cc}, the current values are:
-\begin{align*}
-\epsilon_\mathrm{LC} &= 0.30, \\
-\epsilon_\mathrm{PDE} &= 0.64.
-\end{align*}
-
-The effective mean photoelectron conversion for photons that geometrically reach the sensor boundary is therefore
+In \texttt{src/PMTSensitiveDetector.cc}, the light-collection efficiency
+remains a single flat value,
 \[
-\epsilon_\mathrm{eff} = \epsilon_\mathrm{LC}\,\epsilon_\mathrm{PDE} = 0.192.
+\epsilon_\mathrm{LC} = 0.30,
 \]
+while the photon-detection efficiency $\epsilon_\mathrm{PDE}$ is now a
+function of the individual photon's energy, $\epsilon_\mathrm{PDE}(E_\gamma)$,
+evaluated separately for every photon reaching the sensor boundary rather
+than applied as one averaged constant.
 
-This is a strong simplification. In particular:
+\subsubsection{Photon-Detection Efficiency Curve}
+\label{sec:pde-curve}
+The reference device is again the Hamamatsu S13360-6050PE (6$\times$6~mm$^2$
+active area, 50~$\mu$m pixel pitch), matching the modeled photosensor
+footprint and the digitizer's PMT gain scale ($G=2.8\times10^6$ in
+\texttt{src/ScintillatorDigitizerModule.cc}), taken from the Hamamatsu
+S13360 series datasheet (KAPD1052E).\footnote{Hamamatsu Photonics,
+\emph{MPPC S13360 series}, datasheet KAPD1052E,
+\url{https://www.hamamatsu.com/content/dam/hamamatsu-photonics/sites/documents/99_SALES_LIBRARY/ssd/s13360_series_kapd1052e.pdf}.}
+The datasheet's ``Electrical and optical characteristics'' table (p.3)
+reports the single-wavelength value
+\[
+  \epsilon_\mathrm{PDE}(\lambda_p = 450~\mathrm{nm}) = 40\%
+\]
+for the 50~$\mu$m pitch row at the recommended operating overvoltage. This
+was previously used directly as the flat constant
+$\epsilon_\mathrm{PDE}=0.64$; that value does not correspond to any
+recommended-operating-point PDE in the S13360 series and has been replaced.
+
+The shape of the response versus wavelength is taken from the ``Photon
+detection efficiency vs.\ wavelength (typical example), pixel pitch:
+50~$\mu$m'' plot (p.4 of the same datasheet), anchored so that the curve
+equals exactly 40\% at $\lambda = 450~\mathrm{nm}$:
+\begin{center}
+\begin{tabular}{cccc}
+\toprule
+$\lambda$ [nm] & PDE & $\lambda$ [nm] & PDE \\
+\midrule
+300 & 0.03 & 450 & 0.40 \\
+320 & 0.10 & 480 & 0.39 \\
+340 & 0.19 & 500 & 0.37 \\
+360 & 0.27 & 550 & 0.30 \\
+380 & 0.32 & 600 & 0.23 \\
+400 & 0.35 & 650 & 0.17 \\
+420 & 0.38 & 700 & 0.13 \\
+& & 900 & 0.03 \\
+\bottomrule
+\end{tabular}
+\end{center}
+\texttt{PMTSensitiveDetector.cc} converts each photon's energy to a
+wavelength with $\lambda = hc/E_\gamma$ and linearly interpolates this
+table (clamped at the endpoints) to obtain $\epsilon_\mathrm{PDE}(E_\gamma)$
+for the Bernoulli detection decision. Away from the $\lambda_p=450~\mathrm{nm}$
+anchor, the table is a manual reading of the plotted curve, not a digitized
+dataset, and should be treated as accurate only to about $\pm 1$--$2$ PDE
+points. The table extends to 900~nm, beyond the
+$\approx 400$--$451~\mathrm{nm}$ range populated by the scintillator
+emission spectrum, so that Cerenkov photons -- produced within the same
+\texttt{RINDEX} energy domain -- are also covered without extrapolation.
+
+For a scintillation photon near the emission peak ($\approx 420$--$425~\mathrm{nm}$,
+$\epsilon_\mathrm{PDE}\approx 0.38$--$0.39$), the effective mean
+photoelectron conversion for photons that geometrically reach the sensor
+boundary is therefore
+\[
+\epsilon_\mathrm{eff} \approx \epsilon_\mathrm{LC}\,\epsilon_\mathrm{PDE}
+\approx 0.30 \times 0.38 \approx 0.114,
+\]
+versus $0.192$ before this change -- both the flat-to-curve change and the
+lower calibrated PDE value reduce the modeled photoelectron yield relative
+to the previous constant.
+
+This remains a simplification. In particular:
 \begin{itemize}
-\item \(\epsilon_\mathrm{LC}\) is applied as a random kill even after geometric transport has already occurred,
-\item \(\epsilon_\mathrm{PDE}\) is wavelength-independent,
+\item \(\epsilon_\mathrm{LC}\) is still applied as a flat, wavelength-independent random kill even after geometric transport has already occurred,
 \item neither angle dependence nor fill factor is modeled explicitly,
 \item no crosstalk, afterpulsing, recovery, or dark counts are included.
 \end{itemize}
+
+\section{Optical Photon Transport Safety Cutoff}
+\label{sec:photon-timeout}
+\texttt{src/SteppingAction.cc} kills any optical photon track whose
+post-step global time exceeds
+\[
+  t_\mathrm{max} = 200~\mathrm{ns}.
+\]
+This is a computational safety net against optical photons trapped by
+repeated total internal reflection, not a physics cut: the scintillation
+timing model's slow decay component is $\tau_\mathrm{slow}=11.36~\mathrm{ns}$
+(Section~\ref{sec:birks-constant} and Section~3 above), so essentially all
+photons are emitted, transported, and either absorbed or detected well
+before $t_\mathrm{max}$. The cutoff is set an order of magnitude beyond the
+recorded timing histograms ($0$--$50~\mathrm{ns}$, see
+\texttt{RunAction.cc}), so it is not expected to truncate the physical
+arrival-time tail or bias the recorded timing distributions; it only bounds
+the worst-case per-event CPU cost from rare pathologically trapped photons.
 
 \section{Digitization Conventions}
 \subsection{Charge Model}
@@ -913,8 +1054,8 @@ error or an event-by-event gain fluctuation.
 
 \section{Current Limitations and Drawbacks}
 \begin{enumerate}[label=\arabic*.]
-\item \textbf{Double simplification of light collection.} Optical transport is simulated, but an additional stochastic ``light collection efficiency'' cut is also applied at the sensor. This mixes geometric and phenomenological losses.
-\item \textbf{Wavelength-independent PDE.} The photosensor response does not depend on wavelength, although the emission spectrum now does.
+\item \textbf{Double simplification of light collection.} Optical transport is simulated, but an additional stochastic ``light collection efficiency'' cut is also applied at the sensor. This mixes geometric and phenomenological losses. Unlike the photon-detection efficiency (Section~\ref{sec:pde-curve}), this light-collection factor is still a single flat constant, not wavelength- or angle-dependent.
+\item \textbf{Manually read PDE and wrap-reflectivity curves.} The photon-detection efficiency curve (Section~\ref{sec:pde-curve}) is a hand read-off of a datasheet plot, accurate only to about $\pm1$--$2$ PDE points away from its single anchored data point; the wrap-reflectivity curve is genuine measured data but for a specific reflector foil batch (3M ESR, GERDA experiment) that may not exactly match the wrapping material used on the real tiles.
 \item \textbf{No explicit host-to-dopant re-emission chain.} The present scintillator now uses an effective p-terphenyl + POPOP final emission spectrum, but it still does not simulate absorption by POPOP followed by delayed re-emission.
 \item \textbf{Very simplified electronics.} Charge is proportional only to \(N_\mathrm{pe}\), with no single-photoelectron gain spread, noise, shaping, saturation, or baseline effects.
 \item \textbf{Mean-map FairShip response.} FairShip applies a deterministic

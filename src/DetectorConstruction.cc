@@ -18,8 +18,27 @@
 namespace {
 constexpr G4double kSipmHalfX = 3.0 * mm;
 constexpr G4double kSipmHalfY = 3.0 * mm;
-constexpr G4double kWrapReflectivity = 0.96;
 constexpr G4double kWrapSigmaAlpha = 0.35;
+// Birks constant for the CH-based plastic scintillator bulk, adopted from
+// the organic-scintillator value kB = 9.0e-3 g/MeV/cm^2 reported in
+// arXiv:0911.3041, expressed directly in Geant4 length/energy units as in
+// the reference sts-g4-simulation implementation.
+constexpr G4double kScintillatorBirksConstant = 0.0872 * mm / MeV;
+
+// Measured reflectivity of 3M ESR reflector foil vs. photon energy
+// (GERDA experiment, MPI Munich), used for the diffuse tile wrap. Table is
+// stored in ascending photon energy (~310-499 nm), spanning the
+// scintillator emission range.
+constexpr G4int kWrapReflectivityEntries = 15;
+// G4MaterialPropertiesTable::AddProperty takes non-const G4double* in this
+// Geant4 version, so these cannot be constexpr/const arrays.
+G4double kWrapReflectivityEnergy[kWrapReflectivityEntries] = {
+    2.483 * eV, 2.536 * eV, 2.617 * eV, 2.702 * eV, 2.794 * eV,
+    2.891 * eV, 2.995 * eV, 3.109 * eV, 3.193 * eV, 3.230 * eV,
+    3.360 * eV, 3.503 * eV, 3.660 * eV, 3.817 * eV, 3.993 * eV};
+G4double kWrapReflectivityValue[kWrapReflectivityEntries] = {
+    0.988, 0.990, 0.988, 0.985, 0.981, 0.978, 0.975, 0.965,
+    0.873, 0.673, 0.105, 0.097, 0.097, 0.111, 0.136};
 }  // namespace
 
 G4VPhysicalVolume* DetectorConstruction::Construct() {
@@ -77,9 +96,6 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
                                         300.0 * cm, 300.0 * cm};
   G4double photocathodeAbsorption[nEntries] = {
       1.0e-6 * mm, 1.0e-6 * mm, 1.0e-6 * mm, 1.0e-6 * mm, 1.0e-6 * mm};
-  G4double wrapReflectivity[nEntries] = {kWrapReflectivity, kWrapReflectivity,
-                                         kWrapReflectivity, kWrapReflectivity,
-                                         kWrapReflectivity};
 
   mpt->AddProperty("RINDEX", photonEnergy, scintRefractiveIndex, nEntries);
   mpt->AddProperty("ABSLENGTH", photonEnergy, absorptionLength, nEntries);
@@ -103,6 +119,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
                         TimingModelParameters::kSlowComponentYield);
 
   scintillator->SetMaterialPropertiesTable(mpt);
+  scintillator->GetIonisation()->SetBirksConstant(kScintillatorBirksConstant);
 
   auto* airMpt = new G4MaterialPropertiesTable();
   airMpt->AddProperty("RINDEX", photonEnergy, airRefractiveIndex, nEntries);
@@ -185,8 +202,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
   wrapSurface->SetFinish(groundfrontpainted);
   wrapSurface->SetSigmaAlpha(kWrapSigmaAlpha);
   auto* wrapMpt = new G4MaterialPropertiesTable();
-  wrapMpt->AddProperty("REFLECTIVITY", photonEnergy, wrapReflectivity,
-                       nEntries);
+  wrapMpt->AddProperty("REFLECTIVITY", kWrapReflectivityEnergy,
+                       kWrapReflectivityValue, kWrapReflectivityEntries);
   wrapSurface->SetMaterialPropertiesTable(wrapMpt);
 
   new G4LogicalBorderSurface("ScintillatorToGrease", scintillatorPhysical,
