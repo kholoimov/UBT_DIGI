@@ -27,6 +27,11 @@ executable="${project_dir}/build/ubt_scintillator"
 
 mkdir -p "${scan_output}" "${analysis_output}"
 manifest="${scan_output}/manifest.csv"
+preserved_manifest=""
+if [[ -f "${manifest}" ]]; then
+  preserved_manifest=$(mktemp)
+  cp "${manifest}" "${preserved_manifest}"
+fi
 echo "particle,label,energy_mev,root_file" > "${manifest}"
 
 muon_events=${UBT_ENERGY_SCAN_EVENTS_MUON:-1500}
@@ -37,9 +42,25 @@ threads=${UBT_ENERGY_SCAN_THREADS:-80}
 # name : G4 particle name : label for plots/report : min_energy_MeV : max_energy_MeV : events_per_point : threads
 particle_configs=(
   "mu-|mu-|Muon|500|100000|${muon_events}|${threads}"
-  "e-|e-|Electron|1|1000|${electron_events}|${threads}"
+  "e-|e-|Electron|0.5|1000|${electron_events}|${threads}"
   "gamma|gamma|Photon|1|1000|${photon_events}|${threads}"
 )
+
+# Comma-separated list of G4 particle names to actually (re-)simulate this
+# invocation, e.g. "e-" to redo only the electron leg. Particle types not
+# in this list keep their previously recorded manifest rows (and existing
+# output files) unchanged, so a partial rerun does not repeat unaffected
+# simulation work.
+particles_to_run=${UBT_ENERGY_SCAN_PARTICLES:-"mu-,e-,gamma"}
+IFS=',' read -ra run_list <<< "${particles_to_run}"
+
+is_selected() {
+  local candidate="$1"
+  for entry in "${run_list[@]}"; do
+    [[ "${entry}" == "${candidate}" ]] && return 0
+  done
+  return 1
+}
 
 run_point() {
   # Tolerates the known shutdown-time segfault (exit 139) that occurs after
@@ -57,6 +78,18 @@ run_point() {
 
 for config in "${particle_configs[@]}"; do
   IFS='|' read -r safe_name g4_particle label min_mev max_mev n_events threads <<< "${config}"
+
+  if ! is_selected "${g4_particle}"; then
+    echo "=== ${label}: skipped this run, keeping previously recorded points ==="
+    if [[ -n "${preserved_manifest}" ]]; then
+      grep "^${g4_particle}," "${preserved_manifest}" >> "${manifest}" || true
+    fi
+    continue
+  fi
+
+  # Discard any stale points from a previous run with a different energy
+  # range/point count before regenerating this particle type.
+  rm -rf "${scan_output}/${safe_name}"
 
   point_dirs=()
   for ((i = 0; i < points; i++)); do
@@ -93,6 +126,10 @@ EOF
     echo "${g4_particle},${label},${energy_mev},${root_file}" >> "${manifest}"
   done
 done
+
+if [[ -n "${preserved_manifest}" ]]; then
+  rm -f "${preserved_manifest}"
+fi
 
 echo "=== Aggregating energy-scan results ==="
 root -l -b -q \

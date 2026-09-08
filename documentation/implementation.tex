@@ -785,14 +785,17 @@ adaptive step that grows with energy) across that type's range, so that a
 wide dynamic range is covered without a dense linear scan:
 \begin{itemize}
 \item $\mu^-$: $0.5$--$100~\mathrm{GeV}$,
-\item $e^-$: $1~\mathrm{MeV}$--$1~\mathrm{GeV}$,
+\item $e^-$: $0.5~\mathrm{MeV}$--$1~\mathrm{GeV}$,
 \item $\gamma$: $1~\mathrm{MeV}$--$1~\mathrm{GeV}$.
 \end{itemize}
 The muon range is as specified for this study. The $e^-$/$\gamma$ range is
 this analysis' own choice, not an independently specified requirement: it
 spans the photoelectric/Compton/pair-production transition for $\gamma$ and
 the absorbed-to-punch-through transition for $e^-$ in a few-mm-thick plastic
-tile, using the same bounds for both species for direct comparability.
+tile, using closely matched bounds for both species for direct
+comparability ($e^-$ starts a factor of two lower, at $0.5~\mathrm{MeV}$,
+to better resolve the rising edge below the containment peak visible in
+Figure~\ref{fig:ubt-adc-vs-particle-energy-electron}).
 
 At every energy point, \texttt{/ubt/gun/randomizeEnergy} is set to
 \texttt{false} and the beam energy is fixed with the standard
@@ -811,9 +814,16 @@ For each resulting \texttt{scintillator\_digi.root},
 \texttt{analysis/plot\_adc\_vs\_particle\_energy.C} computes, directly from
 the \texttt{adc\_counts} branch of the \texttt{events} tree (no histogram
 binning or fit): the mean ADC count, its Bessel-corrected standard error,
-the triggered fraction, and the mean deposited energy. These are written to
-\texttt{analysis/plots/energy\_scan/adc\_vs\_particle\_energy\_summary.csv}
-and plotted together on a single, shared log-energy axis.
+the triggered fraction, and the mean deposited energy. This is done twice
+for $\gamma$: once over all events (\emph{Photon}, whether or not the
+photon interacted at all), and once restricted to events with a non-zero
+energy deposit in the scintillator, i.e. photons that "produced at least
+something" (\emph{Photon (interacted)}); the latter has no equivalent for
+$\mu^-$/$e^-$, which interact in essentially every event. All series are
+written as rows of
+\texttt{analysis/plots/energy\_scan/adc\_vs\_particle\_energy\_summary.csv},
+plotted individually, and additionally overlaid ($\mu^-$, $e^-$, and the
+all-events $\gamma$ curve) on a combined, shared log-energy axis.
 
 \subsubsection{Reproducing the scan}
 \begin{technicaldetails}
@@ -834,20 +844,74 @@ Relevant environment-variable overrides: \texttt{UBT\_ENERGY\_SCAN\_POINTS},
 \begin{figure}[htb]
   \centering
   \includegraphics[width=0.7\linewidth]{../analysis/plots/energy_scan/adc_vs_particle_energy.pdf}
-  \caption{Mean ADC counts versus primary kinetic energy for $\mu^-$,
-  $e^-$, and $\gamma$ primaries, each shot geometrically distributed across
-  the $40\times40~\mathrm{mm^2}$ tile at 10 fixed, geometrically-spaced
+  \caption{Combined overlay: mean ADC counts versus primary kinetic energy
+  for $\mu^-$, $e^-$, and $\gamma$ primaries (all-events curve for
+  $\gamma$), each shot geometrically distributed across the
+  $40\times40~\mathrm{mm^2}$ tile at 10 fixed, geometrically-spaced
   energies. Error bars are the standard error of the mean ADC count at each
-  point; the $\gamma$ curve additionally has a much lower absolute
-  triggered fraction than $\mu^-$/$e^-$ at the same nominal energy, since
-  only a small fraction of photons interact in the thin tile at all (see
-  the summary CSV for the per-point triggered fraction).}
+  point; the $\gamma$ curve sits far below $\mu^-$/$e^-$ because only a
+  small fraction of photons interact in the thin tile at all, pulling the
+  unconditional mean down (see the summary CSV for the per-point triggered
+  fraction, and Figure~\ref{fig:ubt-adc-vs-particle-energy-photon} for the
+  interacted-only view).}
   \label{fig:ubt-adc-vs-particle-energy}
 \end{figure}
 }{%
 \phantomsection\label{fig:ubt-adc-vs-particle-energy}%
 \noindent\textit{The particle-type energy-scan plot is not present. Run
 \texttt{analysis/run\_energy\_scan.sh} to create it.}
+}
+
+\IfFileExists{../analysis/plots/energy_scan/adc_vs_energy_muon.pdf}{%
+\begin{figure}[htb]
+  \centering
+  \subfigure[$\mu^-$: $0.5$--$100~\mathrm{GeV}$.]{%
+    \includegraphics[width=0.47\linewidth]{../analysis/plots/energy_scan/adc_vs_energy_muon.pdf}}
+  \hfill
+  \subfigure[$e^-$: $0.5~\mathrm{MeV}$--$1~\mathrm{GeV}$.\label{fig:ubt-adc-vs-particle-energy-electron}]{%
+    \includegraphics[width=0.47\linewidth]{../analysis/plots/energy_scan/adc_vs_energy_electron.pdf}}
+  \caption{Individual per-particle mean-ADC-vs-energy curves. The muon
+  response is essentially flat (a mild relativistic rise) across its full
+  0.5-100 GeV range. The electron response rises sharply from the
+  $0.5~\mathrm{MeV}$ near-threshold point, through a containment peak
+  around a few MeV (where the increasingly long, scattered low-energy
+  track deposits close to its full energy within the thin tile), before
+  settling onto the same minimum-ionizing plateau as the muon once the
+  electron routinely punches through the tile.}
+  \label{fig:ubt-adc-vs-particle-energy-individual-charged}
+\end{figure}
+}{%
+\phantomsection\label{fig:ubt-adc-vs-particle-energy-electron}%
+\phantomsection\label{fig:ubt-adc-vs-particle-energy-individual-charged}%
+\noindent\textit{The individual muon/electron energy-scan plots are not
+present. Run \texttt{analysis/run\_energy\_scan.sh} to create them.}
+}
+
+\IfFileExists{../analysis/plots/energy_scan/adc_vs_energy_photon_all.pdf}{%
+\begin{figure}[htb]
+  \centering
+  \subfigure[All $\gamma$ events, interacted or not.]{%
+    \includegraphics[width=0.47\linewidth]{../analysis/plots/energy_scan/adc_vs_energy_photon_all.pdf}}
+  \hfill
+  \subfigure[Only $\gamma$ events with a non-zero energy deposit.]{%
+    \includegraphics[width=0.47\linewidth]{../analysis/plots/energy_scan/adc_vs_energy_photon_interacted.pdf}}
+  \caption{Photon response, split by whether the photon interacted at all.
+  The all-events curve (left) is dominated by the low, energy-dependent
+  interaction probability in the thin tile and stays within a few ADC
+  counts of zero. Restricting to events where the photon actually deposited
+  energy (right, \emph{Photon (interacted)} in the summary CSV) removes
+  that dilution and reveals essentially the same qualitative shape as the
+  electron response: a rise from a low-energy value, through a peak, onto a
+  minimum-ionizing-like plateau comparable to $\mu^-$/$e^-$ at high energy
+  -- consistent with the tile fully absorbing the secondary electrons
+  produced by photon interactions once those secondaries deposit most of
+  their energy before escaping.}
+  \label{fig:ubt-adc-vs-particle-energy-photon}
+\end{figure}
+}{%
+\phantomsection\label{fig:ubt-adc-vs-particle-energy-photon}%
+\noindent\textit{The individual photon energy-scan plots are not present.
+Run \texttt{analysis/run\_energy\_scan.sh} to create them.}
 }
 
 \cleardoublepage
