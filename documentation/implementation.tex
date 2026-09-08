@@ -125,10 +125,7 @@ A Birks constant is set on the scintillator material in
 via \texttt{G4Material::GetIonisation()->SetBirksConstant(...)}. It is
 adopted from the organic-scintillator value
 $k_B = 9.0\times10^{-3}~\mathrm{g\,MeV^{-1}\,cm^{-2}}$ reported in
-arXiv:0911.3041, expressed directly in Geant4 length/energy units as in the
-reference \texttt{sts-g4-simulation} implementation (a related standalone
-Geant4 tile simulation, JGU Mainz / ETAP, used here only as a cross-check
-reference, not as part of this codebase).
+arXiv:0911.3041, expressed directly in Geant4 length/energy units.
 
 Without this constant, \texttt{G4Scintillation} produces a light yield
 strictly proportional to deposited energy, $N_\gamma \propto \mathrm{d}E$,
@@ -169,8 +166,7 @@ property with 15 points spanning $2.483$--$3.993~\mathrm{eV}$
 ($\approx 310$--$499~\mathrm{nm}$), which fully covers the
 $2.75$--$3.10~\mathrm{eV}$ scintillator emission range without
 extrapolation. The table is measured data for 3M ESR (Enhanced Specular
-Reflector) foil from the GERDA experiment (MPI Munich), reused from the
-\texttt{sts-g4-simulation} reference implementation:
+Reflector) foil from the GERDA experiment (MPI Munich):
 \begin{center}
 \begin{tabular}{cccc}
 \toprule
