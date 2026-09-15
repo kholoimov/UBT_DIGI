@@ -218,32 +218,32 @@
   horizontal axis are PMT charge in pC.
 \end{frame}
 
-\begin{frame}{Absolute Photoelectron-Arrival Timing}
-  \begin{columns}[T]
-    \begin{column}{0.5\textwidth}
-      \centering
-      \includegraphics[height=2.5cm]{../analysis/plots/mean_arrival_time_vs_pe_index.pdf}\\[2pt]
-      \footnotesize Mean arrival time $t_N$
-    \end{column}
-    \begin{column}{0.5\textwidth}
-      \centering
-      \includegraphics[height=2.5cm]{../analysis/plots/timing_sigma_vs_threshold.pdf}\\[2pt]
-      \footnotesize Resolution $\sigma_{t_N}$
-    \end{column}
-  \end{columns}
-  \vspace{3pt}
-  \footnotesize
-  Mean and resolution of the photoelectron-arrival time $t_N$ vs.\
-  threshold $N$, from per-event values (no binning or fit); plotted only
-  where $N$ has $\ge 10$ contributing events.
+% \begin{frame}{Absolute Photoelectron-Arrival Timing}
+%   \begin{columns}[T]
+%     \begin{column}{0.5\textwidth}
+%       \centering
+%       \includegraphics[height=2.5cm]{../analysis/plots/mean_arrival_time_vs_pe_index.pdf}\\[2pt]
+%       \footnotesize Mean arrival time $t_N$
+%     \end{column}
+%     \begin{column}{0.5\textwidth}
+%       \centering
+%       \includegraphics[height=2.5cm]{../analysis/plots/timing_sigma_vs_threshold.pdf}\\[2pt]
+%       \footnotesize Resolution $\sigma_{t_N}$
+%     \end{column}
+%   \end{columns}
+%   \vspace{3pt}
+%   \footnotesize
+%   Mean and resolution of the photoelectron-arrival time $t_N$ vs.\
+%   threshold $N$, from per-event values (no binning or fit); plotted only
+%   where $N$ has $\ge 10$ contributing events.
 
-  \vspace{3pt}
-  \begin{alertblock}{\footnotesize Preliminary timing study}
-    \footnotesize Simulated timing does not yet agree with real tile
-    measurements; FairShip uses a real-data-based timing smearing
-    instead of this standalone response.
-  \end{alertblock}
-\end{frame}
+%   \vspace{3pt}
+%   \begin{alertblock}{\footnotesize Preliminary timing study}
+%     \footnotesize Simulated timing does not yet agree with real tile
+%     measurements; FairShip uses a real-data-based timing smearing
+%     instead of this standalone response.
+%   \end{alertblock}
+% \end{frame}
 
 \begin{frame}{Spatial Uniformity of the ADC Response}
   \begin{columns}[T]
@@ -270,19 +270,18 @@
     \begin{column}{0.5\textwidth}
       \centering
       \includegraphics[height=3.0cm]{../analysis/plots/energy_scan/adc_vs_energy_muon.pdf}\\[2pt]
-      \footnotesize \muminus: 0.5--100\,GeV
+      \footnotesize \muminus
     \end{column}
     \begin{column}{0.5\textwidth}
       \centering
       \includegraphics[height=3.0cm]{../analysis/plots/energy_scan/adc_vs_energy_electron.pdf}\\[2pt]
-      \footnotesize \eminus: 0.05\,MeV--2\,GeV, 20 points
+      \footnotesize \eminus
     \end{column}
   \end{columns}
   \vspace{4pt}
   \footnotesize
   Muon response is essentially flat (mild relativistic rise). The
-  electron scan resolves the absorbed-to-punch-through transition:
-  trigger onset $\approx 0.27$\,MeV, containment peak $\approx 190$ ADC
+  electron scan is peaking $\approx 190$ ADC
   at 4.3\,MeV, settling onto the 172--174-count MIP plateau above
   13\,MeV.
 \end{frame}
@@ -304,8 +303,7 @@
   \footnotesize
   The all-events curve is dominated by the low interaction probability
   in the thin tile and stays near zero. Restricting to non-zero deposits
-  reveals a rise $\to$ peak $\to$ MIP-like plateau comparable to
-  \muminus/\eminus\ at high energy.
+  reveals a rise.
 \end{frame}
 
 \begin{frame}{Two Levels of the Final UBT Mapping}
@@ -395,11 +393,7 @@
   \footnotesize
   Digitized \texttt{UpstreamTaggerHit} rates over the full detector plane
   from the MinBias2026 muon-background sample, weighted to
-  $N_\mathrm{total}=4.12\times10^{8}$ muon-background events per spill
-  (\texttt{FairShipUBT/analyze\_ubt\_hits.py}). Under the standard
-  $\approx 1$\,s SHiP spill convention, hits/spill are read as an
-  approximate rate in Hz; the rate peaks near the beam axis, where a few
-  tiles exceed 1\,MHz.
+  $N_\mathrm{total}=4.12\times10^{13}$ muon-background events per spill.
 \end{frame}
 
 \begin{frame}{Expected Rate per Particle Type}
@@ -453,11 +447,7 @@
   \end{columns}
   \vspace{3pt}
   \footnotesize
-  Momentum of particles leaving an \texttt{UpstreamTaggerPoint} MC hit
-  (same 88-file, 4.13M-event, 5.79M-hit MinBias2026 sample; log-log
-  axes, histograms normalized to unit area). This steeply-falling real
-  spectrum is what the per-particle ADC calibration curves are weighted
-  by.
+  Momentum of particles leaving an \texttt{UpstreamTaggerPoint}.
 \end{frame}
 
 \end{document}
