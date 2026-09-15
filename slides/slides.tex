@@ -8,10 +8,10 @@
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
+\usepackage{textcomp}
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs}
 \usepackage{graphicx}
-\usepackage{enumitem}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning}
 
@@ -21,7 +21,11 @@
 \setbeamertemplate{caption}[numbered]
 \setbeamertemplate{footline}[frame number]
 \setbeamercovered{transparent}
-\setlist[itemize]{noitemsep, topsep=1pt, parsep=0pt, itemsep=2pt, leftmargin=1.1em}
+% NOTE: enumitem is deliberately NOT used. Loading it together with
+% beamer's own \enumerate implementation causes infinite macro
+% recursion in \labelenumi ("TeX capacity exceeded") the moment any
+% \begin{enumerate} appears, regardless of \setlist scoping. Itemize
+% spacing is instead tightened per-list with \itemsep/\parskip below.
 \renewcommand{\arraystretch}{0.9}
 
 % ---------------------------------------------------------------------------
@@ -153,7 +157,7 @@
         $\tau_\mathrm{slow}$ & 11.3607\,ns \\
         $Y_\mathrm{fast}$ & 0.889145 \\
         $Y_\mathrm{slow}$ & 0.110855 \\
-        Total yield & 10\,000\;$\gamma$/MeV \\
+        Total yield & 10\,000\,$\gamma$/MeV \\
         \bottomrule
       \end{tabular}
 
