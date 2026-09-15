@@ -382,23 +382,81 @@
   \begin{columns}[T]
     \begin{column}{0.5\textwidth}
       \centering
-      \includegraphics[height=2.9cm]{figs/ubt_digitized_hits_hits_per_tile.png}\\[2pt]
-      \footnotesize Per-tile expected hit-rate distribution, all species (weighted)
+      \includegraphics[height=2.9cm]{figs/ubt_digitized_hits.png}\\[2pt]
+      \footnotesize General spatial rate map, all species (weighted, log $z$)
     \end{column}
     \begin{column}{0.5\textwidth}
       \centering
-      \includegraphics[height=2.9cm]{figs/ubt_digitized_hits_tiles_above_1mhz.png}\\[2pt]
-      \footnotesize Spatial map of tiles exceeding 1\,MHz
+      \includegraphics[height=2.9cm]{figs/ubt_digitized_hits_hits_per_tile.png}\\[2pt]
+      \footnotesize Per-tile expected hit-rate distribution
     \end{column}
   \end{columns}
   \vspace{4pt}
   \footnotesize
-  Digitized \texttt{UpstreamTaggerHit} rates from the MinBias2026
-  muon-background sample, weighted to
+  Digitized \texttt{UpstreamTaggerHit} rates over the full detector plane
+  from the MinBias2026 muon-background sample, weighted to
   $N_\mathrm{total}=4.12\times10^{8}$ muon-background events per spill
   (\texttt{FairShipUBT/analyze\_ubt\_hits.py}). Under the standard
   $\approx 1$\,s SHiP spill convention, hits/spill are read as an
-  approximate rate in Hz; a few tiles near the beam axis exceed 1\,MHz.
+  approximate rate in Hz; the rate peaks near the beam axis, where a few
+  tiles exceed 1\,MHz.
+\end{frame}
+
+\begin{frame}{Expected Rate per Particle Type}
+  \begin{columns}[T]
+    \begin{column}{0.333\textwidth}
+      \centering
+      \includegraphics[height=2.6cm]{figs/ubt_digitized_hits_muon.png}\\[2pt]
+      \footnotesize \muminus\ only
+    \end{column}
+    \begin{column}{0.333\textwidth}
+      \centering
+      \includegraphics[height=2.6cm]{figs/ubt_digitized_hits_electron.png}\\[2pt]
+      \footnotesize \eminus/$e^+$ only
+    \end{column}
+    \begin{column}{0.333\textwidth}
+      \centering
+      \includegraphics[height=2.6cm]{figs/ubt_digitized_hits_gamma.png}\\[2pt]
+      \footnotesize \gam\ only
+    \end{column}
+  \end{columns}
+  \vspace{4pt}
+  \footnotesize
+  Same weighted spatial rate map as the previous slide, split by MC
+  primary species. Muons dominate the rate across the whole plane;
+  electrons/positrons and photons are comparatively more concentrated
+  close to the beam axis, consistent with their softer momentum spectra.
+\end{frame}
+
+\begin{frame}{Momentum Distribution of Each Particle}
+  \centering
+  \includegraphics[height=1.9cm]{../analysis/plots/energy_scan/ubt_hit_momentum_all.png}\\[2pt]
+  \footnotesize All species combined
+  \vspace{3pt}
+
+  \begin{columns}[T]
+    \begin{column}{0.333\textwidth}
+      \centering
+      \includegraphics[height=1.9cm]{../analysis/plots/energy_scan/ubt_hit_momentum_muon.png}\\[1pt]
+      \tiny \muminus: up to a few hundred GeV$/c$
+    \end{column}
+    \begin{column}{0.333\textwidth}
+      \centering
+      \includegraphics[height=1.9cm]{../analysis/plots/energy_scan/ubt_hit_momentum_electron.png}\\[1pt]
+      \tiny \eminus: $\mathcal{O}(1)$\,GeV$/c$
+    \end{column}
+    \begin{column}{0.333\textwidth}
+      \centering
+      \includegraphics[height=1.9cm]{../analysis/plots/energy_scan/ubt_hit_momentum_gamma.png}\\[1pt]
+      \tiny \gam: $\mathcal{O}(10)$\,MeV$/c$
+    \end{column}
+  \end{columns}
+  \vspace{3pt}
+  \footnotesize
+  Momentum of particles leaving an \texttt{UpstreamTaggerPoint} MC hit
+  (same 88-file, 4.13M-event, 5.92M-hit MinBias2026 sample; log-log
+  axes). This steeply-falling real spectrum is what the per-particle ADC
+  calibration curves are weighted by.
 \end{frame}
 
 \end{document}
