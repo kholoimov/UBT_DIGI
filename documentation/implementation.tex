@@ -903,46 +903,13 @@ back to the shared \texttt{UBT\_ENERGY\_SCAN\_POINTS} if unset),
 present. Run \texttt{analysis/run\_energy\_scan.sh} to create them.}
 }
 
-Table~\ref{tab:ubt-adc-vs-energy-electron} lists the underlying per-point
-data for the electron curve of
-Figure~\ref{fig:ubt-adc-vs-particle-energy-individual-charged} (1500 events
-per point; the triggered fraction and mean deposited energy are also
-reported here since they underlie the same rise/peak/plateau discussion),
-reproduced from
-\texttt{analysis/plots/energy\_scan/adc\_vs\_particle\_energy\_summary.csv}.
-\begin{table}[htb]
-\centering
-\begin{tabular}{cccc}
-\toprule
-$E$ [MeV] & Mean ADC & Triggered [\%] & Mean $E_\mathrm{dep}$ [MeV] \\
-\midrule
-0.0500 & $0.32 \pm 0.02$ & 0.0 & 0.0056 \\
-0.0873 & $3.80 \pm 0.07$ & 0.0 & 0.0545 \\
-0.1525 & $9.40 \pm 0.10$ & 0.0 & 0.1282 \\
-0.2664 & $18.32 \pm 0.15$ & 91.7 & 0.2447 \\
-0.4654 & $33.30 \pm 0.21$ & 96.4 & 0.4413 \\
-0.8129 & $59.38 \pm 0.34$ & 97.9 & 0.7788 \\
-1.420 & $101.94 \pm 0.61$ & 99.3 & 1.337 \\
-2.480 & $175.62 \pm 1.18$ & 99.6 & 2.281 \\
-4.332 & $190.50 \pm 1.75$ & 99.6 & 2.474 \\
-7.566 & $175.76 \pm 1.43$ & 99.7 & 2.284 \\
-13.22 & $173.34 \pm 1.38$ & 99.9 & 2.253 \\
-23.08 & $173.49 \pm 1.37$ & 100.0 & 2.259 \\
-40.32 & $172.65 \pm 1.32$ & 100.0 & 2.248 \\
-70.43 & $171.72 \pm 1.30$ & 100.0 & 2.234 \\
-123.0 & $172.00 \pm 1.22$ & 100.0 & 2.246 \\
-214.9 & $172.52 \pm 1.14$ & 100.0 & 2.246 \\
-375.3 & $173.03 \pm 1.20$ & 100.0 & 2.253 \\
-655.5 & $172.92 \pm 1.22$ & 100.0 & 2.256 \\
-1145 & $172.32 \pm 1.20$ & 100.0 & 2.247 \\
-2000 & $172.64 \pm 1.18$ & 100.0 & 2.245 \\
-\bottomrule
-\end{tabular}
-\caption{Mean ADC count, triggered fraction, and mean deposited energy per
-scan point for $e^-$, 0.05~MeV--2~GeV (20 log-spaced points, 1500 events
-each). The ADC uncertainty is the standard error of the mean.}
-\label{tab:ubt-adc-vs-energy-electron}
-\end{table}
+The per-point data underlying each curve (energy, mean ADC and its standard
+error, triggered fraction, mean deposited energy, and event count) is
+available as a plain-text table per particle type/variant:
+\texttt{analysis/plots/energy\_scan/adc\_vs\_energy\_\{muon,electron,%
+photon\_all,photon\_interacted\}.dat}, written alongside the plots and the
+combined summary CSV by
+\texttt{analysis/plot\_adc\_vs\_particle\_energy.C}.
 
 \IfFileExists{../analysis/plots/energy_scan/adc_vs_energy_photon_all.pdf}{%
 \begin{figure}[htb]

@@ -176,6 +176,28 @@ void DrawIndividualPlot(const Series& series, const char* outputDir) {
             << "/adc_vs_energy_" << series.fileStub << ".pdf" << std::endl;
 }
 
+// Plain-text, whitespace-separated data table for one series (one file per
+// particle type/variant), for use outside ROOT (e.g. gnuplot, a spreadsheet,
+// or direct inclusion in a report) without re-deriving it from the ROOT
+// files or the combined summary CSV.
+void WriteDatFile(const Series& series, const char* outputDir) {
+  if (series.points.empty()) {
+    return;
+  }
+  const TString path =
+      TString::Format("%s/adc_vs_energy_%s.dat", outputDir, series.fileStub.c_str());
+  std::ofstream dat(path.Data());
+  dat << "# " << series.label << " (" << series.particle << ")\n";
+  dat << "# energy_mev mean_adc adc_stderr triggered_fraction mean_edep_mev n_events\n";
+  for (const auto& point : series.points) {
+    dat << point.energyMeV << ' ' << point.meanAdc << ' ' << point.adcStdErr
+        << ' ' << point.triggeredFraction << ' ' << point.meanEdepMeV << ' '
+        << point.nEvents << '\n';
+  }
+  dat.close();
+  std::cout << "Wrote per-particle data table: " << path << std::endl;
+}
+
 }  // namespace
 
 void plot_adc_vs_particle_energy(const char* manifestPath,
@@ -240,6 +262,7 @@ void plot_adc_vs_particle_energy(const char* manifestPath,
   for (const auto* series : allSeries) {
     writeCsvRows(*series);
     DrawIndividualPlot(*series, outputDir);
+    WriteDatFile(*series, outputDir);
   }
   csv.close();
   std::cout << "Wrote energy-scan summary table: " << summaryCsvPath
