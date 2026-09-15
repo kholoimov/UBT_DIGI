@@ -339,4 +339,74 @@
   full-height green sides and the two-column-per-side green central neck.
 \end{frame}
 
+% ============================================================================
+\section{FairShip Digitization \& Expected Rates}
+% ============================================================================
+
+\begin{frame}{FairShip Digitization: Coarse Plane to Small-Tile ADC}
+  \begin{columns}[T]
+    \begin{column}{0.52\textwidth}
+      \textbf{From physical volumes to a small-tile response, in short:}
+      \begin{enumerate}
+        \item Particle transport only sees \alert{coarse} regions: a
+          $15\times15$ grid of 225 sensitive $40\times40~\mathrm{cm^2}$
+          volumes, each locked to a 2\,cm or 4\,cm constituent-tile pitch
+          (102 vs.\ 123 regions).
+        \item Every MC point is \alert{requantized} onto the implicit
+          small tile: $i_q=\lfloor (q_\mathrm{MC}-o)/s(D)\rfloor$ picks the
+          tile index, and the digitized position becomes that
+          \emph{small tile's center} -- not the parent region's center.
+        \item ADC uses the point's \alert{exact local position} inside
+          that small tile, $x_\mathrm{local}=x_\mathrm{MC}-x_\mathrm{tile}$,
+          looked up in a $1\times1~\mathrm{mm^2}$ ADC/MeV response map
+          built from the standalone Geant4 study.
+        \item $N_\mathrm{ADC}=\mathrm{round}\!\big(E_\mathrm{dep}[\mathrm{MeV}]
+          \cdot R_s(x_\mathrm{local},y_\mathrm{local})\big)$; triggered
+          when $N_\mathrm{ADC}\ge100$.
+      \end{enumerate}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \begin{tikzpicture}[
+        node distance=6mm,
+        box/.style={draw, rounded corners, fill=blue!8, align=center,
+          text width=4.4cm, font=\scriptsize, minimum height=1.1cm},
+        arr/.style={-{Latex[length=2mm]}, thick}
+      ]
+        \node[box] (a) {Coarse region\\$40\times40~\mathrm{cm^2}$\\(physical transport volume)};
+        \node[box, below=of a] (b) {Implicit small tile\\$2\times2$ or $4\times4~\mathrm{cm^2}$\\(position quantized to tile center)};
+        \node[box, below=of b] (c) {Local position in tile\\$x_\mathrm{local}=x_\mathrm{MC}-x_\mathrm{tile}$};
+        \node[box, below=of c, fill=teal!10] (d) {ADC/MeV map lookup\\$N_\mathrm{ADC}=\mathrm{round}(E_\mathrm{dep}\cdot R_s)$};
+        \draw[arr] (a) -- (b);
+        \draw[arr] (b) -- (c);
+        \draw[arr] (c) -- (d);
+      \end{tikzpicture}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Expected Particle Rate per Tile}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{figs/ubt_digitized_hits_hits_per_tile.png}\\
+      \small Per-tile expected hit-rate distribution, all species (weighted)
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{figs/ubt_digitized_hits_tiles_above_1mhz.png}\\
+      \small Spatial map of tiles exceeding 1\,MHz
+    \end{column}
+  \end{columns}
+  \vspace{0.5em}
+  \small
+  Digitized \texttt{UpstreamTaggerHit} rates from the MinBias2026
+  muon-background sample, normalized event-by-event to
+  $N_\mathrm{total}=4.12\times10^{8}$ muon-background events per spill
+  (\texttt{FairShipUBT/analyze\_ubt\_hits.py}). Under the standard
+  $\approx 1$\,s SHiP spill convention, the resulting expected
+  hits-per-spill are read directly as an approximate per-tile rate in Hz;
+  a handful of tiles closest to the beam axis exceed 1\,MHz.
+\end{frame}
+
 \end{document}
