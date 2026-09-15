@@ -35,7 +35,7 @@ fi
 echo "particle,label,energy_mev,root_file" > "${manifest}"
 
 muon_events=${UBT_ENERGY_SCAN_EVENTS_MUON:-1500}
-electron_events=${UBT_ENERGY_SCAN_EVENTS_ELECTRON:-3000}
+electron_events=${UBT_ENERGY_SCAN_EVENTS_ELECTRON:-1500}
 photon_events=${UBT_ENERGY_SCAN_EVENTS_PHOTON:-20000}
 threads=${UBT_ENERGY_SCAN_THREADS:-80}
 
@@ -49,7 +49,7 @@ photon_points=${UBT_ENERGY_SCAN_POINTS_PHOTON:-${points}}
 # name : G4 particle name : label for plots/report : min_energy_MeV : max_energy_MeV : events_per_point : threads : points
 particle_configs=(
   "mu-|mu-|Muon|500|100000|${muon_events}|${threads}|${muon_points}"
-  "e-|e-|Electron|10|5000|${electron_events}|${threads}|${electron_points}"
+  "e-|e-|Electron|0.05|2000|${electron_events}|${threads}|${electron_points}"
   "gamma|gamma|Photon|1|1000|${photon_events}|${threads}|${photon_points}"
 )
 

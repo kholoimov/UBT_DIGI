@@ -786,22 +786,17 @@ that a wide dynamic range is covered without a dense linear scan: 10 points
 for $\mu^-$ and $\gamma$, and 20 points for $e^-$ (see below):
 \begin{itemize}
 \item $\mu^-$: $0.5$--$100~\mathrm{GeV}$, 10 points,
-\item $e^-$: $0.01$--$5~\mathrm{GeV}$, 20 points,
+\item $e^-$: $0.05~\mathrm{MeV}$--$2~\mathrm{GeV}$, 20 points,
 \item $\gamma$: $1~\mathrm{MeV}$--$1~\mathrm{GeV}$, 10 points.
 \end{itemize}
 The muon range is as specified for this study. The $e^-$/$\gamma$ ranges are
 this analysis' own choice, not an independently specified requirement: the
 $\gamma$ range spans the photoelectric/Compton/pair-production transition in
-a few-mm-thick plastic tile. The $e^-$ range and point count were revised from an earlier
-$0.5~\mathrm{MeV}$--$1~\mathrm{GeV}$, 10-point scan, which had resolved the
-absorbed-to-punch-through transition, including a rising edge and
-containment peak below $\sim\!10~\mathrm{MeV}$ (a low-energy point, well
-below the $\mathcal{O}(10~\mathrm{MeV})$--$\mathcal{O}(\mathrm{GeV})$ range
-of primaries actually incident on the tile). The revised scan instead
-concentrates its now-doubled point density on that physically relevant
-$0.01$--$5~\mathrm{GeV}$ range, giving a substantially more precise
-determination of the mean ADC response and its (lack of) energy dependence
-there, at the cost of no longer resolving the low-energy rise/peak feature.
+a few-mm-thick plastic tile, and the $e^-$ range spans the
+absorbed-to-punch-through transition (rising edge, containment peak, and
+minimum-ionizing plateau, see Figure~\ref{fig:ubt-adc-vs-particle-energy-electron})
+in a few-mm-thick plastic tile with twice the point density of the other two
+species, for a more precise curve across the full transition.
 
 At every energy point, \texttt{/ubt/gun/randomizeEnergy} is set to
 \texttt{false} and the beam energy is fixed with the standard
@@ -810,11 +805,13 @@ remains \texttt{true} (default beam-spot half-size), so primaries are still
 shot geometrically distributed across the tile face, as in the general
 studies. Each point uses
 \texttt{UBT\_ENABLE\_SCINTILLATOR\_PHOTON\_STUDIES=false} and a fixed event
-count per point (1500 for $\mu^-$, 3000 for $e^-$, 20000 for $\gamma$ -- a
-larger sample for $\gamma$ because only a few percent of photons interact
-at all in the thin tile, so far fewer events yield a non-zero digitized
-signal). Event counts and the number of scan points are configurable via
-environment variables read by the driver script.
+count per point (1500 for $\mu^-$ and $e^-$, 20000 for $\gamma$ -- a larger
+sample for $\gamma$ because only a few percent of photons interact at all in
+the thin tile, so far fewer events yield a non-zero digitized signal; $e^-$
+uses the same reduced count as $\mu^-$ since its 20, rather than 10, scan
+points already give comparable total statistics). Event counts and the
+number of scan points are configurable per particle type via environment
+variables read by the driver script.
 
 For each resulting \texttt{scintillator\_digi.root},
 \texttt{analysis/plot\_adc\_vs\_particle\_energy.C} computes, directly from
@@ -881,21 +878,22 @@ back to the shared \texttt{UBT\_ENERGY\_SCAN\_POINTS} if unset),
   \subfigure[$\mu^-$: $0.5$--$100~\mathrm{GeV}$.]{%
     \includegraphics[width=0.47\linewidth]{../analysis/plots/energy_scan/adc_vs_energy_muon.pdf}}
   \hfill
-  \subfigure[$e^-$: $0.01$--$5~\mathrm{GeV}$, 20 points.\label{fig:ubt-adc-vs-particle-energy-electron}]{%
+  \subfigure[$e^-$: $0.05~\mathrm{MeV}$--$2~\mathrm{GeV}$, 20 points.\label{fig:ubt-adc-vs-particle-energy-electron}]{%
     \includegraphics[width=0.47\linewidth]{../analysis/plots/energy_scan/adc_vs_energy_electron.pdf}}
   \caption{Individual per-particle mean-ADC-vs-energy curves. The muon
   response is essentially flat (a mild relativistic rise) across its full
-  0.5-100 GeV range. Over this denser, 20-point $0.01$--$5~\mathrm{GeV}$
-  range the electron response is likewise flat: the mean ADC count stays
-  within $172$--$175$ counts across the full two-and-a-half decades in
-  energy (see the summary CSV), i.e. the tile is already on the
-  minimum-ionizing plateau at the $10~\mathrm{MeV}$ lower edge of this scan.
-  This range sits above the absorbed-to-punch-through rising edge and
-  containment peak that occur below $\sim\!10~\mathrm{MeV}$ (not resolved
-  here; see the discussion in Section~\ref{sec:energy-scan}), so the finer
-  point spacing instead yields a correspondingly more precise plateau value
-  over the energy range most relevant to primaries actually incident on the
-  tile.}
+  0.5-100 GeV range. The electron response, sampled at twice the point
+  density, shows the full absorbed-to-punch-through transition: below
+  $\sim\!0.27~\mathrm{MeV}$ essentially no event triggers (triggered
+  fraction $0$, mean ADC $\lesssim 10$); the triggered fraction then rises
+  quickly through $0.27$--$1.4~\mathrm{MeV}$ (from $0.92$ to $0.99$) while
+  the mean ADC count climbs into the hundreds; a containment peak of
+  $\approx\!190$ ADC counts is reached around $4.3~\mathrm{MeV}$ (where the
+  increasingly long, scattered low-energy track deposits close to its full
+  energy within the thin tile); and above $\sim\!13~\mathrm{MeV}$ the curve
+  settles onto the same $172$--$174$-count minimum-ionizing plateau as the
+  muon, flat up to the $2~\mathrm{GeV}$ upper edge of this scan (see the
+  summary CSV for the full per-point breakdown).}
   \label{fig:ubt-adc-vs-particle-energy-individual-charged}
 \end{figure}
 }{%
@@ -920,10 +918,9 @@ present. Run \texttt{analysis/run\_energy\_scan.sh} to create them.}
   energy (right, \emph{Photon (interacted)} in the summary CSV) removes
   that dilution and reveals a rise from a low-energy value, through a peak,
   onto a minimum-ionizing-like plateau comparable to $\mu^-$/$e^-$ at high
-  energy -- the same qualitative shape seen in the electron response below
-  the $10~\mathrm{MeV}$ lower edge of the current $e^-$ scan (see
-  Section~\ref{sec:energy-scan}) -- consistent with the tile fully absorbing
-  the secondary electrons
+  energy -- the same qualitative shape seen in the electron response
+  (Figure~\ref{fig:ubt-adc-vs-particle-energy-electron}) -- consistent with
+  the tile fully absorbing the secondary electrons
   produced by photon interactions once those secondaries deposit most of
   their energy before escaping.}
   \label{fig:ubt-adc-vs-particle-energy-photon}
