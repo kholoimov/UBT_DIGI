@@ -8,9 +8,11 @@ on:
     paths:
       - '.github/workflows/documentation-pages.yml'
       - 'documentation/**'
+      - 'slides/**'
       - 'src/**'
       - 'include/**'
       - 'analysis/**'
+      - 'geometry/**'
   workflow_dispatch:
 
 permissions:
@@ -37,10 +39,19 @@ jobs:
           latexmk_use_xelatex: false
           latexmk_shell_escape: false
 
+      - name: Compile LaTeX slides
+        uses: xu-cheng/latex-action@v3
+        with:
+          root_file: slides.tex
+          working_directory: slides
+          latexmk_use_xelatex: false
+          latexmk_shell_escape: false
+
       - name: Prepare GitHub Pages artifact
         run: |
           mkdir -p public
           cp documentation/main.pdf public/ubt-digi-implementation-note.pdf
+          cp slides/slides.pdf public/ubt-digi-slides.pdf
           cat > public/index.html <<'EOF'
           <!doctype html>
           <html lang="en">
@@ -74,6 +85,7 @@ jobs:
               .button {
                 display: inline-block;
                 margin-top: 1rem;
+                margin-right: 0.75rem;
                 padding: 0.8rem 1.1rem;
                 background: #004c6d;
                 color: white;
@@ -91,14 +103,16 @@ jobs:
             <main>
               <h1>UBT_DIGI Documentation</h1>
               <p>
-                This page publishes the current PDF build of the implementation note
-                from the repository documentation sources.
+                This page publishes the current PDF builds of the implementation note
+                and companion slide deck from the repository documentation sources.
               </p>
               <p>
-                <a class="button" href="ubt-digi-implementation-note.pdf">Open PDF</a>
+                <a class="button" href="ubt-digi-implementation-note.pdf">Open implementation note</a>
+                <a class="button" href="ubt-digi-slides.pdf">Open slides</a>
               </p>
               <p class="meta">
-                Generated automatically by GitHub Actions from <code>documentation/main.tex</code>.
+                Generated automatically by GitHub Actions from <code>documentation/main.tex</code>
+                and <code>slides/slides.tex</code>.
               </p>
             </main>
           </body>

@@ -1,0 +1,342 @@
+% ============================================================================
+% UBT Scintillator Digitization -- Beamer slide deck
+% Companion presentation to documentation/main.tex
+% Compile with pdflatex (run twice for the table of contents / references).
+% ============================================================================
+\documentclass[aspectratio=169,12pt]{beamer}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta}
+
+\usetheme{Boadilla}
+\usecolortheme{seahorse}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{caption}[numbered]
+\setbeamercovered{transparent}
+
+% ---------------------------------------------------------------------------
+% Title data
+% ---------------------------------------------------------------------------
+\title[UBT Digitization]{UBT Scintillator Digitization}
+\subtitle{Geometry, Optical Model, and ADC Digitizer Validation for the
+  SHiP Upstream Background Tagger}
+\author{V.~Kholoimov}
+\institute[EPFL]{EPFL \\ \textit{SHiP Experiment, CERN}}
+\date{\today}
+
+% Convenience macros matching documentation/implementation.tex notation
+\newcommand{\muminus}{\ensuremath{\mu^{-}}}
+\newcommand{\eminus}{\ensuremath{e^{-}}}
+\newcommand{\gam}{\ensuremath{\gamma}}
+
+% Note: no shared \graphicspath is used, since several figures share the
+% same basename across plots/, plots_20mm/, and adc/ subfolders. Every
+% \includegraphics call below therefore gives its full relative path.
+
+\begin{document}
+
+% ---------------------------------------------------------------------------
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Outline}
+  \tableofcontents
+\end{frame}
+
+% ============================================================================
+\section{Detector Definition}
+% ============================================================================
+
+\begin{frame}{Geometry \& Sensor Stack}
+  \begin{columns}[T]
+    \begin{column}{0.52\textwidth}
+      \textbf{Volumes}
+      \begin{itemize}
+        \item World: Geant4 air box, half-size $(0.5,0.5,0.5)~\mathrm{m}$.
+        \item Default tile: $40\times40\times10~\mathrm{mm^3}$.
+        \item \texttt{UBT\_SCINTILLATOR\_SIZE\_MM=20} selects
+          $20\times20\times5~\mathrm{mm^3}$; other transverse sizes are
+          rejected.
+        \item Photosensor active face is \emph{not} scaled with the tile:
+          fixed $6\times6~\mathrm{mm^2}$ for both configurations.
+      \end{itemize}
+      \vspace{0.5em}
+      \textbf{Coordinate convention}
+      \begin{itemize}
+        \item Scintillator center at $(0,0,0)$; beam along $+z$.
+        \item Sensor stack on the $+z$ face; muon source upstream at
+          negative $z$.
+        \item Gun default: \muminus\ at $(0,0,-30~\mathrm{mm})$, direction
+          $(0,0,1)$; kinetic energy uniform in $1$--$20~\mathrm{GeV}$.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \begin{tikzpicture}[scale=0.72, every node/.style={font=\scriptsize}]
+        % beam arrow
+        \draw[-{Latex[length=2mm]}, thick] (-1.1,1.2) -- (-0.1,1.2);
+        \node[anchor=south] at (-0.6,1.25) {\muminus, \eminus, \gam};
+        % scintillator
+        \draw[fill=blue!12, draw=blue!60!black, thick] (0,0) rectangle (2.4,2.4);
+        \node at (1.2,1.2) {\shortstack{Scintillator\\[2pt]\tiny $p$-terphenyl+POPOP}};
+        % grease
+        \draw[fill=gray!15, draw=gray!60] (2.4,0) rectangle (2.6,2.4);
+        % window
+        \draw[fill=teal!15, draw=teal!70!black, thick] (2.6,0) rectangle (3.1,2.4);
+        % photocathode
+        \draw[fill=gray!55, draw=gray!70] (3.1,0) rectangle (3.3,2.4);
+        % dimension (thickness)
+        \draw[<->] (0,-0.3) -- (2.4,-0.3) node[midway, below] {40(20)\,mm};
+        % leaders
+        \draw (2.5,2.4) -- (2.5,3.0) node[above, align=center] {Grease\\0.2\,mm};
+        \draw (2.85,2.4) -- (2.85,3.5) node[above, align=center] {Glass window\\1.0\,mm};
+        \draw (3.2,2.4) -- (4.6,2.9) node[right, align=left] {Photocathode 0.1\,mm\\/ SiPM sensitive slab};
+        \draw (3.2,0) -- (4.6,-0.6) node[right, align=left] {Active face\\$6\times6~\mathrm{mm^2}$ (fixed)};
+      \end{tikzpicture}
+
+      \vspace{0.6em}
+      \small
+      \begin{tabular}{lcc}
+        \toprule
+        Parameter & 40\,mm tile & 20\,mm tile \\
+        \midrule
+        Transverse size & $40\times40$ & $20\times20$ \\
+        Thickness & 10\,mm & 5\,mm \\
+        Sensor face & \multicolumn{2}{c}{$6\times6~\mathrm{mm^2}$} \\
+        Beam-spot half-size $a$ & 20\,mm (init.) & $\le 10$\,mm \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Materials, Optics \& Timing Model}
+  \begin{columns}[T]
+    \begin{column}{0.52\textwidth}
+      \textbf{Materials}
+      \begin{itemize}
+        \item Scintillator: effective para-terphenyl + POPOP,
+          $\rho = 1.23~\mathrm{g/cm^3}$; bulk composition
+          $\mathrm{C_{18}H_{14}}$. POPOP enters via the emission spectrum,
+          not as an explicit dopant fraction.
+        \item Window: Pyrex glass \quad Grease: hydrocarbon \quad
+          Photocathode: silicon slab \quad World: air.
+      \end{itemize}
+      \vspace{0.4em}
+      \textbf{Photon detection chain}
+      \begin{itemize}
+        \item Two Bernoulli filters at the photocathode boundary: flat
+          light-collection $\epsilon_\mathrm{LC}=0.30$, then
+          energy-dependent $\epsilon_\mathrm{PDE}(E_\gamma)$.
+        \item Reference: Hamamatsu S13360-6050PE
+          ($6\times6~\mathrm{mm^2}$, 50\,\textmu m pitch);
+          $\epsilon_\mathrm{PDE}(450~\mathrm{nm})=40\%$.
+        \item Digitizer gain $G=2.8\times10^6$;
+          $\mathrm{ADC}=\mathrm{round}(Q[\mathrm{pC}])$ -- one pC equals one
+          ADC count.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \small
+      \begin{tabular}{lc}
+        \toprule
+        \multicolumn{2}{l}{\textbf{Timing constants}} \\
+        \midrule
+        $\tau_\mathrm{rise}$ & 0.7\,ns \\
+        $\tau_\mathrm{fast}$ & 2.0348\,ns \\
+        $\tau_\mathrm{slow}$ & 11.3607\,ns \\
+        $Y_\mathrm{fast}$ & 0.889145 \\
+        $Y_\mathrm{slow}$ & 0.110855 \\
+        Total yield & 10\,000\;$\gamma$/MeV \\
+        \bottomrule
+      \end{tabular}
+
+      \vspace{0.8em}
+      \begin{tabular}{cc}
+        \toprule
+        $E_\gamma$ [eV] & Rel.\ intensity \\
+        \midrule
+        2.75 & 0.10 \\
+        2.85 & 0.55 \\
+        2.93 & 1.00 \\
+        3.00 & 0.75 \\
+        3.10 & 0.25 \\
+        \bottomrule
+      \end{tabular}
+
+      \vspace{0.5em}
+      \footnotesize Fast and slow components share the same emission
+      spectrum -- they differ only in time structure and relative yield.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ============================================================================
+\section{Simulation \& Digitizer Results}
+% ============================================================================
+
+\begin{frame}{Scintillation Timing Model Validation}
+  \begin{columns}[T]
+    \begin{column}{0.62\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{../analysis/scintillation_real_vs_generated.pdf}\\
+      \small Normalized measured spectrum compared with times generated
+      from the fitted two-component model.
+    \end{column}
+    \begin{column}{0.38\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{../analysis/scintillation_real_data.pdf}\\
+      \footnotesize Input: measured spectrum over the fit interval.
+
+      \vspace{0.8em}
+      \raggedright\footnotesize
+      One million times are generated from the fitted common-rise,
+      fast-decay, and slow-decay components with a fixed random seed.
+      Both histograms are normalized, so the overlay tests the timing
+      \emph{shape}, not the total recorded yield.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Simulated Integrated PMT-Charge Distributions}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{../analysis/plots/photoelectrons.pdf}\\
+      \small $40\times40~\mathrm{mm^2}$ tile
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{../analysis/plots_20mm/photoelectrons.pdf}\\
+      \small $20\times20~\mathrm{mm^2}$ tile
+    \end{column}
+  \end{columns}
+  \vspace{0.5em}
+  \small
+  Simulated integrated PMT-charge distributions in picocoulombs for the two
+  tile sizes. Numerically, one pC corresponds to one ADC count in the
+  present standalone conversion, but the plotted observable and horizontal
+  axis are PMT charge in pC.
+\end{frame}
+
+\begin{frame}{Absolute Photoelectron-Arrival Timing}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{../analysis/plots/mean_arrival_time_vs_pe_index.pdf}\\
+      \small Mean arrival time $t_N$
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{../analysis/plots/timing_sigma_vs_threshold.pdf}\\
+      \small Resolution $\sigma_{t_N}$
+    \end{column}
+  \end{columns}
+  \vspace{0.5em}
+  \small
+  Absolute photoelectron-arrival mean and timing resolution as a function
+  of the selected photoelectron threshold $N$, from per-event $t_N$ values
+  (no binning or fit), plotted only where $N$ has $\ge 10$ contributing
+  events.
+
+  \vspace{0.4em}
+  \begin{alertblock}{\footnotesize Preliminary timing study}
+    \footnotesize Simulated timing does not yet agree with real tile
+    measurements. FairShip currently uses a real-data-based timing
+    smearing instead of this standalone simulated response.
+  \end{alertblock}
+\end{frame}
+
+\begin{frame}{Spatial Uniformity of the ADC Response}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{../analysis/plots/adc/mean_adc_vs_position.png}\\
+      \small Raw mean ADC vs.\ position
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{../analysis/plots/adc/mean_adc_per_mev_vs_position.png}\\
+      \small ADC/MeV, energy-normalized
+    \end{column}
+  \end{columns}
+  \vspace{0.5em}
+  \small
+  Spatial uniformity map of the raw response and energy-normalized map for
+  tiles $40\times40~\mathrm{mm^2}$. Empty bins mark regions without
+  selected events, not zero response.
+\end{frame}
+
+\begin{frame}{Individual Per-Particle Mean-ADC-vs-Energy Curves}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{../analysis/plots/energy_scan/adc_vs_energy_muon.pdf}\\
+      \small \muminus: 0.5--100\,GeV
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{../analysis/plots/energy_scan/adc_vs_energy_electron.pdf}\\
+      \small \eminus: 0.05\,MeV--2\,GeV, 20 points
+    \end{column}
+  \end{columns}
+  \vspace{0.5em}
+  \small
+  Muon response is essentially flat (mild relativistic rise) across
+  0.5--100\,GeV. The electron scan resolves the full absorbed-to-punch
+  -through transition: trigger onset $\approx 0.27$\,MeV, containment peak
+  $\approx 190$ ADC at 4.3\,MeV, settling onto the 172--174-count
+  minimum-ionizing plateau above 13\,MeV.
+\end{frame}
+
+\begin{frame}{Photon Response, Split by Interaction}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{../analysis/plots/energy_scan/adc_vs_energy_photon_all.pdf}\\
+      \small All \gam\ events, interacted or not
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{../analysis/plots/energy_scan/adc_vs_energy_photon_interacted.pdf}\\
+      \small Only interacted \gam\ events
+    \end{column}
+  \end{columns}
+  \vspace{0.5em}
+  \small
+  The all-events curve is dominated by the low interaction probability in
+  the thin tile and stays near zero. Restricting to non-zero deposits
+  reveals a rise $\to$ peak $\to$ minimum-ionizing-like plateau comparable
+  to \muminus/\eminus\ at high energy.
+\end{frame}
+
+\begin{frame}{Two Levels of the Final UBT Mapping}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{../geometry/ubt_geometry_simulation.png}\\
+      \small Coarse transport map: 225 regions of $40\times40~\mathrm{cm^2}$
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{../geometry/ubt_geometry_digitization.png}\\
+      \small Constituent-tile map for digitized hit coordinates
+    \end{column}
+  \end{columns}
+  \vspace{0.5em}
+  \small
+  Only the coarse regions (left) are physical FairShip geometry volumes;
+  the small tiles (right) are reconstructed mathematically during
+  digitization. Blue denotes $4\times4~\mathrm{cm^2}$ tiles and green
+  denotes $2\times2~\mathrm{cm^2}$ tiles, including the three-column
+  full-height green sides and the two-column-per-side green central neck.
+\end{frame}
+
+\end{document}
