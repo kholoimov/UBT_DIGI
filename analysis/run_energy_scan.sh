@@ -39,11 +39,18 @@ electron_events=${UBT_ENERGY_SCAN_EVENTS_ELECTRON:-3000}
 photon_events=${UBT_ENERGY_SCAN_EVENTS_PHOTON:-20000}
 threads=${UBT_ENERGY_SCAN_THREADS:-80}
 
-# name : G4 particle name : label for plots/report : min_energy_MeV : max_energy_MeV : events_per_point : threads
+# Per-particle point counts, each individually overridable, falling back to
+# the shared UBT_ENERGY_SCAN_POINTS (default 10). The electron leg defaults
+# to a denser 20-point scan for a more precise mean-ADC-vs-energy curve.
+muon_points=${UBT_ENERGY_SCAN_POINTS_MUON:-${points}}
+electron_points=${UBT_ENERGY_SCAN_POINTS_ELECTRON:-20}
+photon_points=${UBT_ENERGY_SCAN_POINTS_PHOTON:-${points}}
+
+# name : G4 particle name : label for plots/report : min_energy_MeV : max_energy_MeV : events_per_point : threads : points
 particle_configs=(
-  "mu-|mu-|Muon|500|100000|${muon_events}|${threads}"
-  "e-|e-|Electron|0.5|1000|${electron_events}|${threads}"
-  "gamma|gamma|Photon|1|1000|${photon_events}|${threads}"
+  "mu-|mu-|Muon|500|100000|${muon_events}|${threads}|${muon_points}"
+  "e-|e-|Electron|10|5000|${electron_events}|${threads}|${electron_points}"
+  "gamma|gamma|Photon|1|1000|${photon_events}|${threads}|${photon_points}"
 )
 
 # Comma-separated list of G4 particle names to actually (re-)simulate this
@@ -77,7 +84,7 @@ run_point() {
 }
 
 for config in "${particle_configs[@]}"; do
-  IFS='|' read -r safe_name g4_particle label min_mev max_mev n_events threads <<< "${config}"
+  IFS='|' read -r safe_name g4_particle label min_mev max_mev n_events threads n_points <<< "${config}"
 
   if ! is_selected "${g4_particle}"; then
     echo "=== ${label}: skipped this run, keeping previously recorded points ==="
@@ -92,11 +99,11 @@ for config in "${particle_configs[@]}"; do
   rm -rf "${scan_output}/${safe_name}"
 
   point_dirs=()
-  for ((i = 0; i < points; i++)); do
-    if [[ ${points} -eq 1 ]]; then
+  for ((i = 0; i < n_points; i++)); do
+    if [[ ${n_points} -eq 1 ]]; then
       fraction="0"
     else
-      fraction=$(awk -v i="${i}" -v n="${points}" 'BEGIN { print i / (n - 1) }')
+      fraction=$(awk -v i="${i}" -v n="${n_points}" 'BEGIN { print i / (n - 1) }')
     fi
     energy_mev=$(awk -v lo="${min_mev}" -v hi="${max_mev}" -v f="${fraction}" \
       'BEGIN { print lo * exp(f * log(hi / lo)) }')
@@ -117,7 +124,7 @@ for config in "${particle_configs[@]}"; do
 /run/beamOn ${n_events}
 EOF
 
-    echo "=== ${label}: point $((i + 1))/${points}, E = ${energy_mev} MeV ==="
+    echo "=== ${label}: point $((i + 1))/${n_points}, E = ${energy_mev} MeV ==="
     ( cd "${point_dir}" && run_point env \
         UBT_ENABLE_SCINTILLATOR_PHOTON_STUDIES=false \
         "${executable}" run.mac )
