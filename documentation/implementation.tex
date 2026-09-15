@@ -945,12 +945,44 @@ expect from UBT background hits", since the incident spectrum is not flat
 in energy: the energy-scan curves are built from a handful of
 geometrically-spaced fixed energies with equal event counts at each point,
 whereas the real background flux has a continuously falling energy
-spectrum that is dominated by low-energy particles (see the momentum
-distributions in \texttt{FairShipUBT/analyze\_ubt\_mc\_hits.py}'s output).
+spectrum that is dominated by low-energy particles, as shown directly by
+the momentum distributions of Figure~\ref{fig:ubt-hit-momentum}.
 Averaging the calibration curve's ADC values naively across its scan
 points would therefore over-represent the high-energy, plateau region and
 under-represent the steeply-rising low-energy turn-on that actually
 dominates the real hit rate.
+
+\IfFileExists{../analysis/plots/energy_scan/ubt_hit_momentum_all.png}{%
+\begin{figure}[htb]
+  \centering
+  \includegraphics[width=0.6\linewidth]{../analysis/plots/energy_scan/ubt_hit_momentum_all.png}
+  \\[1em]
+  \subfigure[Muons.]{%
+    \includegraphics[width=0.31\linewidth]{../analysis/plots/energy_scan/ubt_hit_momentum_muon.png}}
+  \hfill
+  \subfigure[Electrons/positrons.]{%
+    \includegraphics[width=0.31\linewidth]{../analysis/plots/energy_scan/ubt_hit_momentum_electron.png}}
+  \hfill
+  \subfigure[Photons.]{%
+    \includegraphics[width=0.31\linewidth]{../analysis/plots/energy_scan/ubt_hit_momentum_gamma.png}}
+  \caption{Momentum distribution of particles leaving a
+  \texttt{UpstreamTaggerPoint} MC hit in the UBT detector, from the same
+  88-file, 4.13-million-event, 5.92-million-hit MinBias2026 FairShip
+  muon-background sample used throughout this section (log-log axes; note
+  the differing momentum ranges: up to a few hundred~$\mathrm{GeV}/c$ for
+  $\mu^-$, but only up to $\mathcal{O}(1)~\mathrm{GeV}/c$ for $e^-$ and
+  $\mathcal{O}(10)~\mathrm{MeV}/c$ for $\gamma$). This is the real,
+  steeply-falling spectrum that the calibration curves above are weighted
+  by to obtain Figures~\ref{fig:ubt-expected-adc-per-particle} and
+  \ref{fig:ubt-expected-adc-vs-momentum}.}
+  \label{fig:ubt-hit-momentum}
+\end{figure}
+}{%
+\phantomsection\label{fig:ubt-hit-momentum}%
+\noindent\textit{The UBT hit momentum-distribution plots are not present.
+Run \texttt{FairShipUBT/analyze\_ubt\_mc\_hits.py} over a FairShip
+MinBias2026 background sample to create them.}
+}
 
 To get an average that reflects the real background instead, the
 per-particle-type ADC values are \emph{weighted by the real MC spectrum}:
@@ -1031,6 +1063,48 @@ turn-on and high-energy plateau.
 \phantomsection\label{fig:ubt-expected-adc-vs-momentum}%
 \noindent\textit{The expected-ADC-vs-momentum plots are not present. Run
 \texttt{FairShipUBT/analyze\_ubt\_mc\_hits.py} over a FairShip
+MinBias2026 background sample to create them.}
+}
+
+Projecting each panel of Figure~\ref{fig:ubt-expected-adc-vs-momentum} onto
+its ADC axis -- i.e.\ dropping the momentum information and just
+histogramming the per-hit recalculated ADC values -- gives the ADC-count
+distribution actually expected per species, and summing all three species'
+per-hit values into a single histogram gives the expected combined
+distribution seen by the detector regardless of particle type.
+
+\IfFileExists{../analysis/plots/energy_scan/expected_adc_distribution_all.png}{%
+\begin{figure}[htb]
+  \centering
+  \includegraphics[width=0.6\linewidth]{../analysis/plots/energy_scan/expected_adc_distribution_all.png}
+  \\[1em]
+  \subfigure[Muons.]{%
+    \includegraphics[width=0.31\linewidth]{../analysis/plots/energy_scan/expected_adc_distribution_muon.png}}
+  \hfill
+  \subfigure[Electrons/positrons.]{%
+    \includegraphics[width=0.31\linewidth]{../analysis/plots/energy_scan/expected_adc_distribution_electron.png}}
+  \hfill
+  \subfigure[Photons (interacted only).]{%
+    \includegraphics[width=0.31\linewidth]{../analysis/plots/energy_scan/expected_adc_distribution_gamma.png}}
+  \caption{Distribution of the recalculated (momentum-derived) ADC count
+  per UBT background hit, combined (top) and per particle type (bottom),
+  for the same MinBias2026 sample as
+  Figures~\ref{fig:ubt-hit-momentum}--\ref{fig:ubt-expected-adc-vs-momentum}.
+  Each species shows a peak at its calibration-curve plateau value plus a
+  low-ADC tail from hits below the plateau's momentum threshold; the small
+  intermediate steps within each species' distribution are an artefact of
+  the finite number of energy points sampled by the underlying calibration
+  curve (piecewise-linear interpolation between neighbouring calibration
+  points, see Section~\ref{sec:energy-scan} above). The combined
+  distribution is the sum of the three per-species histograms and is
+  dominated by the $\mu^-$ plateau peak, since muons make up the large
+  majority ($4.63\times10^6$ of $5.92\times10^6$) of UBT background hits.}
+  \label{fig:ubt-expected-adc-distribution}
+\end{figure}
+}{%
+\phantomsection\label{fig:ubt-expected-adc-distribution}%
+\noindent\textit{The recalculated-ADC-distribution plots are not present.
+Run \texttt{FairShipUBT/analyze\_ubt\_mc\_hits.py} over a FairShip
 MinBias2026 background sample to create them.}
 }
 
