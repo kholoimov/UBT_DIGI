@@ -994,6 +994,46 @@ per particle type actually seen by the detector.
 MinBias2026 background sample to create it.}
 }
 
+The single averages in Figure~\ref{fig:ubt-expected-adc-per-particle}
+collapse each species' per-hit ADC predictions down to one number; plotting
+the same per-hit predictions against the hit's momentum instead shows how
+that average is built up, and where in momentum the real background
+population actually sits relative to the calibration curve's low-energy
+turn-on and high-energy plateau.
+
+\IfFileExists{../analysis/plots/energy_scan/expected_adc_vs_momentum_muon.png}{%
+\begin{figure}[htb]
+  \centering
+  \subfigure[Muons.]{%
+    \includegraphics[width=0.47\linewidth]{../analysis/plots/energy_scan/expected_adc_vs_momentum_muon.png}}
+  \hfill
+  \subfigure[Electrons/positrons.]{%
+    \includegraphics[width=0.47\linewidth]{../analysis/plots/energy_scan/expected_adc_vs_momentum_electron.png}}
+  \\[1em]
+  \subfigure[Photons (interacted only).]{%
+    \includegraphics[width=0.47\linewidth]{../analysis/plots/energy_scan/expected_adc_vs_momentum_gamma.png}}
+  \caption{Expected ADC counts vs.\ momentum for each UBT background hit,
+  colour-coded by the number of hits per bin (log scale). Essentially every
+  $\mu^-$ hit sits on the minimum-ionizing plateau regardless of momentum,
+  which is why its average in
+  Figure~\ref{fig:ubt-expected-adc-per-particle} is so close to the plateau
+  value. $e^-$ shows the calibration curve's full absorbed-to-plateau
+  transition populated across the real momentum spectrum, with a
+  substantial low-momentum tail below the plateau that pulls its average
+  down from the $172$--$174$ plateau value to $144$ ADC counts. $\gamma$
+  (restricted to interacted photons, i.e.\ hits with a non-zero MC energy
+  deposit) sits almost entirely below $\sim\!1~\mathrm{MeV}/c$, i.e.\ on or
+  below the lowest scanned calibration energy (clipped rather than
+  extrapolated there), which is why its average is far from the plateau.}
+  \label{fig:ubt-expected-adc-vs-momentum}
+\end{figure}
+}{%
+\phantomsection\label{fig:ubt-expected-adc-vs-momentum}%
+\noindent\textit{The expected-ADC-vs-momentum plots are not present. Run
+\texttt{FairShipUBT/analyze\_ubt\_mc\_hits.py} over a FairShip
+MinBias2026 background sample to create them.}
+}
+
 \cleardoublepage
 
 \newpage
