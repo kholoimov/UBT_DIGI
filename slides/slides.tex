@@ -424,30 +424,73 @@
 
 \begin{frame}{Momentum Distribution of Each Particle}
   \centering
-  \includegraphics[height=1.9cm]{../analysis/plots/energy_scan/ubt_hit_momentum_all.png}\\[2pt]
-  \footnotesize All species combined
-  \vspace{3pt}
 
   \begin{columns}[T]
     \begin{column}{0.333\textwidth}
       \centering
-      \includegraphics[height=1.9cm]{../analysis/plots/energy_scan/ubt_hit_momentum_muon.png}\\[1pt]
+      \includegraphics[height=3.8cm]{../analysis/plots/energy_scan/ubt_hit_momentum_muon.png}\\[1pt]
       \tiny \muminus: up to a few hundred GeV$/c$
     \end{column}
     \begin{column}{0.333\textwidth}
       \centering
-      \includegraphics[height=1.9cm]{../analysis/plots/energy_scan/ubt_hit_momentum_electron.png}\\[1pt]
+      \includegraphics[height=3.8cm]{../analysis/plots/energy_scan/ubt_hit_momentum_electron.png}\\[1pt]
       \tiny \eminus: $\mathcal{O}(1)$\,GeV$/c$
     \end{column}
     \begin{column}{0.333\textwidth}
       \centering
-      \includegraphics[height=1.9cm]{../analysis/plots/energy_scan/ubt_hit_momentum_gamma.png}\\[1pt]
+      \includegraphics[height=3.8cm]{../analysis/plots/energy_scan/ubt_hit_momentum_gamma.png}\\[1pt]
       \tiny \gam: $\mathcal{O}(10)$\,MeV$/c$
     \end{column}
   \end{columns}
   \vspace{3pt}
   \footnotesize
   Momentum of particles leaving an \texttt{UpstreamTaggerPoint}.
+\end{frame}
+
+% ============================================================================
+\section{Conclusions \& Next Steps}
+% ============================================================================
+
+\begin{frame}{Conclusions}
+  \footnotesize
+  \begin{itemize}
+    \item The standalone Geant4 optical/timing model \alert{reproduces the
+      measured scintillation timing shape} (shared emission spectrum,
+      common-rise/fast/slow components) and gives consistent simulated
+      PMT-charge distributions for both the $40\times40$ and
+      $20\times20~\mathrm{mm^2}$ tiles.
+    \item The ADC response is \alert{spatially uniform} once
+      energy-normalized, and per-particle ADC-vs-energy calibration curves
+      are established for muons, electrons/positrons, and interacted
+      photons.
+    \item The FairShip digitizer correctly \alert{requantizes} MC points
+      from the coarse $40\times40~\mathrm{cm^2}$ transport regions onto the
+      physical $2\times2$/$4\times4~\mathrm{cm^2}$ tile grid, applying each
+      tile's local ADC/MeV response.
+    \item Applied to the MinBias2026 muon-background sample, the digitizer
+      gives a full \alert{per-tile expected hit-rate map}, split by
+      species: muons dominate everywhere, while electrons/positrons and
+      photons concentrate near the beam axis, consistent with their softer
+      momentum spectra.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Next Steps}
+  \footnotesize
+  \begin{itemize}
+    \item \alert{Re-validate the expected per-tile rate map} against the
+      most recent tile-ID digitization fixes, and reconcile it with the
+      previously reported rates before presenting a final number of tiles
+      above the 1\,MHz design threshold.
+    \item \alert{Close the timing-model gap}: the standalone simulated
+      timing does not yet match real tile measurements; FairShip currently
+      substitutes a real-data-based timing smearing in its place.
+    \item Extend the per-particle ADC calibration and rate study to
+      additional gun energies/species as needed, and cross-check against
+      real UBT tile test-beam data once available.
+    \item Feed the validated per-tile occupancy/rate map into full
+      background- and trigger-rate studies for SHiP.
+  \end{itemize}
 \end{frame}
 
 \end{document}
